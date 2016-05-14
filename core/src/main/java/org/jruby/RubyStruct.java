@@ -590,7 +590,7 @@ public class RubyStruct extends RubyObject {
             public IRubyObject call(IRubyObject obj, boolean recur) {
                 return inspectStruct(context, recur);
             }
-        }, struct, "inspect", true);
+        }, struct, "inspect", false);
     }
 
     @JRubyMethod(name = {"to_a", "values"})
