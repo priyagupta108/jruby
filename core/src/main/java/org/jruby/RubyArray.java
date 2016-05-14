@@ -682,14 +682,13 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
                 final Ruby runtime = context.runtime;
                 int begin = RubyArray.this.begin;
                 long h = realLength;
-                h ^= System.identityHashCode(RubyArray.class);
                 if (recur) {
-                    h ^= h * 31 + RubyNumeric.num2long(invokedynamic(context, runtime.getArray(), HASH));
+                    h ^= RubyNumeric.num2long(invokedynamic(context, runtime.getArray(), HASH));
                 } else {
                     for (int i = begin; i < begin + realLength; i++) {
                         h = (h << 1) | (h < 0 ? 1 : 0);
                         final IRubyObject value = safeArrayRef(runtime, values, i);
-                        h ^= h * 31 + RubyNumeric.num2long(invokedynamic(context, value, HASH));
+                        h ^= RubyNumeric.num2long(invokedynamic(context, value, HASH));
                     }
                 }
                 return runtime.newFixnum(h);
