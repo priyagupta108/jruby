@@ -76,7 +76,9 @@ import java.util.concurrent.Callable;
 
 import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
+import static org.jruby.runtime.Helpers.hashEnd;
 import static org.jruby.runtime.Helpers.invokedynamic;
+import static org.jruby.runtime.Helpers.murmurCombine;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.runtime.invokedynamic.MethodNames.OP_CMP;
 import static org.jruby.RubyEnumerator.SizeFn;
@@ -676,15 +678,20 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
      */
     @JRubyMethod(name = "hash")
     public RubyFixnum hash(ThreadContext context) {
-        final Ruby runtime = context.runtime;
+        Ruby runtime = context.runtime;
+
         int begin = RubyArray.this.begin;
-        long h = (realLength << 32) & System.identityHashCode(RubyArray.class);
+        long h = Helpers.hashStart(runtime, realLength);
+
+        h = Helpers.murmurCombine(h, System.identityHashCode(RubyArray.class));
+
         for (int i = begin; i < begin + realLength; i++) {
-            h = (h << 1) | (h < 0 ? 1 : 0);
-            final IRubyObject value = safeArrayRef(runtime, values, i);
+            IRubyObject value = safeArrayRef(runtime, values, i);
             RubyFixnum n = Helpers.safeHash(context, value);
-            h = (h * 31) + n.getLongValue();
+            h = murmurCombine(h, n.getLongValue());
         }
+
+        h = hashEnd(h);
 
         return runtime.newFixnum(h);
     }
@@ -1757,7 +1764,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
 
         if (ary == this) throw runtime.newArgumentError("recursive array join");
 
-        runtime.execRecursive(new Ruby.RecursiveFunction() {
+        runtime.safeRecurse(new Ruby.RecursiveFunction() {
             public IRubyObject call(IRubyObject obj, boolean recur) {
                 if (recur) throw runtime.newArgumentError("recursive array join");
 
@@ -1765,7 +1772,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
                 recAry.joinAny(context, outValue, sep, recAry.begin, result);
 
                 return runtime.getNil();
-            }}, outValue);
+            }}, outValue, "join", true);
     }
 
     /** rb_ary_join
@@ -1791,15 +1798,11 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
             IRubyObject tmp = val.checkStringType19();
             if (tmp.isNil() || tmp != val) {
                 len += ((begin + realLength) - i) * 10;
-                final RubyString result = (RubyString) RubyString.newStringLight(runtime, len, USASCIIEncoding.INSTANCE).infectBy(this);
-                final RubyString sepStringFinal = sepString;
-                final int iFinal = i;
+                RubyString result = (RubyString) RubyString.newStringLight(runtime, len, USASCIIEncoding.INSTANCE).infectBy(this);
+                RubyString sepStringFinal = sepString;
+                int iFinal = i;
 
-                return runtime.recursiveListOperation(new Callable<IRubyObject>() {
-                    public IRubyObject call() {
-                        return joinAny(context, RubyArray.this, sepStringFinal, iFinal, joinStrings(sepStringFinal, iFinal, result));
-                    }
-                });
+                return joinAny(context, RubyArray.this, sepStringFinal, iFinal, joinStrings(sepStringFinal, iFinal, result));
             }
 
             len += ((RubyString) tmp).getByteList().length();
