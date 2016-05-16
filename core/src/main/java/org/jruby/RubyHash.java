@@ -1248,7 +1248,7 @@ public class RubyHash extends RubyObject implements Map {
                 @Override
                 public void visit(IRubyObject key, IRubyObject value) {
                     hval[0] += Helpers.safeHash(context, key).convertToInteger().getLongValue()
-                            ^ Helpers.safeHash(context, key).convertToInteger().getLongValue();
+                            ^ Helpers.safeHash(context, value).convertToInteger().getLongValue();
                 }
             });
         }
