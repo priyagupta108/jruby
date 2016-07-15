@@ -6,6 +6,8 @@ import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
+import org.jruby.ir.targets.JVMVisitor;
+import org.jruby.ir.targets.JVMVisitorMethodContext;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Block;
@@ -18,6 +20,7 @@ import java.lang.invoke.MethodHandle;
 
 public class CompiledIRMethod extends AbstractIRMethod {
     protected final MethodHandle variable;
+    protected byte[] bytecode;
 
     protected final MethodHandle specific;
     protected final int specificArity;
@@ -44,6 +47,17 @@ public class CompiledIRMethod extends AbstractIRMethod {
 
         setHandle(variable);
     }
+
+    public void setBytecode(byte[] code) {
+        this.bytecode = code;
+    }
+
+    public byte[] getBytecode() {
+        return this.bytecode;
+    }
+
+    public JVMVisitor visitor;
+    public JVMVisitorMethodContext context;
 
     public MethodHandle getHandleFor(int arity) {
         if (specificArity != -1 && arity == specificArity) {

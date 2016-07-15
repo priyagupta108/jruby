@@ -38,6 +38,7 @@ import org.jruby.ast.util.SexpMaker;
 import org.jruby.internal.runtime.methods.CompiledIRMethod;
 import org.jruby.internal.runtime.methods.MixedModeIRMethod;
 import org.jruby.ir.IRClosure;
+import org.jruby.ir.IRScope;
 import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.targets.JVMVisitor;
 import org.jruby.ir.targets.JVMVisitorMethodContext;
@@ -45,6 +46,7 @@ import org.jruby.runtime.CompiledIRBlockBody;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.MixedModeIRBlockBody;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.threading.DaemonThreadFactory;
 import org.jruby.util.JavaNameMangler;
@@ -295,35 +297,9 @@ public class JITCompiler implements JITCompilerMBean {
                     log(method.getImplementationClass(), method.getFile(), method.getLine(), className + '.' + methodName, "done jitting");
                 }
 
-                final String jittedName = context.getJittedName();
-                MethodHandle variable = PUBLIC_LOOKUP.findStatic(sourceClass, jittedName, context.getNativeSignature(-1));
-                IntHashMap<MethodType> signatures = context.getNativeSignaturesExceptVariable();
+                byte[] bytecode = generator.bytecode();
 
-                if (signatures.size() == 0) {
-                    // only variable-arity
-                    method.completeBuild(
-                            new CompiledIRMethod(
-                                    variable,
-                                    method.getIRScope(),
-                                    method.getVisibility(),
-                                    method.getImplementationClass(),
-                                    method.getIRScope().receivesKeywordArgs()));
-
-                } else {
-                    // also specific-arity
-                    for (IntHashMap.Entry<MethodType> entry : signatures.entrySet()) {
-                        method.completeBuild(
-                                new CompiledIRMethod(
-                                        variable,
-                                        PUBLIC_LOOKUP.findStatic(sourceClass, jittedName, entry.getValue()),
-                                        entry.getKey(),
-                                        method.getIRScope(),
-                                        method.getVisibility(),
-                                        method.getImplementationClass(),
-                                        method.getIRScope().receivesKeywordArgs()));
-                        break; // FIXME: only supports one arity
-                    }
-                }
+                method.completeBuild(prepCompiledMethod(visitor, context, sourceClass, bytecode, method.getIRScope(), method.getVisibility(), method.getImplementationClass()));
             } catch (Throwable t) {
                 if (config.isJitLogging()) {
                     log(method.getImplementationClass(), method.getFile(), method.getLine(), className + '.' + methodName, "Could not compile; passes run: " + method.getIRScope().getExecutedPasses(), t.getMessage());
@@ -335,6 +311,45 @@ public class JITCompiler implements JITCompilerMBean {
                 counts.failCount.incrementAndGet();
             }
         }
+    }
+
+    public static CompiledIRMethod prepCompiledMethod(JVMVisitor visitor, JVMVisitorMethodContext context, Class sourceClass, byte[] bytecode, IRScope scope, Visibility visibility, RubyModule implementationClass) throws NoSuchMethodException, IllegalAccessException {
+        final String jittedName = context.getJittedName();
+        MethodHandle variable = PUBLIC_LOOKUP.findStatic(sourceClass, jittedName, context.getNativeSignature(-1));
+        IntHashMap<MethodType> signatures = context.getNativeSignaturesExceptVariable();
+
+        if (signatures.size() == 0) {
+            // only variable-arity
+            CompiledIRMethod cim = new CompiledIRMethod(
+                    variable,
+                    scope,
+                    visibility,
+                    implementationClass,
+                    scope.receivesKeywordArgs());
+            cim.setBytecode(bytecode);
+            cim.visitor = visitor;
+            cim.context = context;
+            return cim;
+
+        } else {
+            // also specific-arity
+            for (IntHashMap.Entry<MethodType> entry : signatures.entrySet()) {
+                CompiledIRMethod cim = new CompiledIRMethod(
+                        variable,
+                        PUBLIC_LOOKUP.findStatic(sourceClass, jittedName, entry.getValue()),
+                        entry.getKey(),
+                        scope,
+                        visibility,
+                        implementationClass,
+                        scope.receivesKeywordArgs());
+                cim.setBytecode(bytecode);
+                cim.visitor = visitor;
+                cim.context = context;
+                return cim; // FIXME: only supports one arity
+            }
+        }
+
+        return null;
     }
 
     private class BlockJITTask implements Runnable {

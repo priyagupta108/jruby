@@ -9,6 +9,8 @@ import org.jcodings.EncodingDB;
 import org.jruby.*;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings;
+import org.jruby.compiler.JITCompiler;
+import org.jruby.compiler.NotCompilableException;
 import org.jruby.internal.runtime.GlobalVariable;
 import org.jruby.internal.runtime.methods.*;
 import org.jruby.ir.IRScope;
@@ -32,6 +34,7 @@ import org.jruby.runtime.opto.Invalidator;
 import org.jruby.runtime.opto.OptoFactory;
 import org.jruby.util.ByteList;
 import org.jruby.util.JavaNameMangler;
+import org.jruby.util.OneShotClassLoader;
 import org.jruby.util.cli.Options;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
@@ -39,10 +42,12 @@ import org.objectweb.asm.Handle;
 import org.objectweb.asm.Opcodes;
 
 import java.lang.invoke.*;
+import java.util.Map;
 
 import static java.lang.invoke.MethodHandles.*;
 import static java.lang.invoke.MethodType.methodType;
 import static org.jruby.runtime.Helpers.arrayOf;
+import static org.jruby.util.CodegenUtils.c;
 import static org.jruby.util.CodegenUtils.p;
 import static org.jruby.util.CodegenUtils.sig;
 
@@ -477,13 +482,36 @@ public class Bootstrap {
         } else if (method instanceof MixedModeIRMethod) {
             DynamicMethod actualMethod = ((MixedModeIRMethod)method).getActualMethod();
             if (actualMethod instanceof CompiledIRMethod) {
-                compiledIRMethod = (CompiledIRMethod)actualMethod;
+                compiledIRMethod = (CompiledIRMethod) actualMethod;
+            } else {
+                System.out.println("forcing jit of " + ((MixedModeIRMethod) method).getIRScope());
+                ((MixedModeIRMethod) method).forceJit(method.getImplementationClass().getRuntime().getCurrentContext());
+                actualMethod = ((MixedModeIRMethod)method).getActualMethod();
+                if (actualMethod instanceof CompiledIRMethod) {
+                    compiledIRMethod = (CompiledIRMethod) actualMethod;
+                }
             }
         }
 
         if (compiledIRMethod != null) {
             // attempt IR direct binding
             // TODO: this will have to expand when we start specializing arities
+
+            // generate specialized version of target method, if bytecode is present
+            if (compiledIRMethod.getBytecode() != null) {
+                Ruby runtime = method.getImplementationClass().getRuntime();
+                IRScope scope = compiledIRMethod.getIRScope();
+                JVMVisitor visitor = compiledIRMethod.visitor;
+
+                System.out.println("specializing " + scope);
+                Class sourceClass = visitor.defineFromBytecode(scope, compiledIRMethod.getBytecode(), new OneShotClassLoader(runtime.getJRubyClassLoader()));
+
+                try {
+                    compiledIRMethod = JITCompiler.prepCompiledMethod(compiledIRMethod.visitor, compiledIRMethod.context, sourceClass, compiledIRMethod.getBytecode(), compiledIRMethod.getIRScope(), compiledIRMethod.getVisibility(), compiledIRMethod.getImplementationClass());
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            }
 
             binder = SmartBinder.from(site.signature)
                     .permute("context", "self", "arg.*", "block");

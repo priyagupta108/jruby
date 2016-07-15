@@ -292,6 +292,10 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
         }
     }
 
+    public void forceJit(ThreadContext context) {
+        context.runtime.getJITCompiler().buildThresholdReached(context, this);
+    }
+
     public String getClassName(ThreadContext context) {
         String className;
         if (implementationClass.isSingleton()) {
