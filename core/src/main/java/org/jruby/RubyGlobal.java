@@ -473,7 +473,7 @@ public class RubyGlobal {
 
         @Override
         protected IRubyObject internalGet(IRubyObject key) {
-            if (size == 0) return null;
+            if (size() == 0) return null;
 
             if (!isCaseSensitive()) {
                 key = getCorrectKey(key.convertToString());

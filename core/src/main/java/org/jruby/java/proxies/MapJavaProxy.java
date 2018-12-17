@@ -93,9 +93,8 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
         // wrong number of args are given to the constructor.
         IRubyObject oldExc = getRuntime().getGlobalVariables().get("$!"); // Save $!
         try {
-            wrappedMap.setSize( getMapObject().size() );
-        }
-        catch (RaiseException e) {
+            wrappedMap.syncSize();
+        } catch (RaiseException e) {
             wrappedMap.setSize(0);
             getRuntime().getGlobalVariables().set("$!", oldExc); // Restore $!
         }
@@ -111,9 +110,9 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
             this.receiver = receiver;
         }
 
-        private void syncSize() { this.size = mapDelegate().size(); }
+        private void syncSize() { setSize(mapDelegate().size()); }
 
-        private void setSize(int size) { this.size = size; }
+        public void setSize(int size) { super.setSize(size); }
 
         // the underlying Map object operations should be delegated to
         private Map mapDelegate() { return receiver.getMapObject(); }
@@ -176,7 +175,7 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
         }
 
         @Override
-        public IRubyObject internalPut(final IRubyObject key, final IRubyObject value) {
+        protected IRubyObject internalPut(final IRubyObject key, final IRubyObject value) {
             @SuppressWarnings("unchecked")
             Ruby runtime = getRuntime();
             final Map<Object, Object> map = mapDelegate();
@@ -206,7 +205,7 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
             return JavaUtil.convertJavaToUsableRubyObject(getRuntime(), result);
         }
 
-        @Override // NOTE: likely won't be called
+        // NOTE: likely won't be called
         public RubyHashEntry internalGetEntry(IRubyObject key) {
             Map map = mapDelegate();
             Object convertedKey = key.toJava(Object.class);
