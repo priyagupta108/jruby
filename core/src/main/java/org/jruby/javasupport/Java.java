@@ -1654,7 +1654,9 @@ public class Java implements Library {
      * using.
      */
     public static <T extends AccessibleObject & Member> boolean trySetAccessible(T member) {
-        return Modules.trySetAccessible(member, Java.class);
+//        return Modules.trySetAccessible(member, Java.class);
+        member.setAccessible(true);
+        return true;
     }
 
 }

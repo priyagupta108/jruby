@@ -78,7 +78,6 @@ import org.jruby.util.StringSupport;
 import org.jruby.util.StrptimeParser;
 import org.jruby.util.StrptimeToken;
 import org.jruby.util.io.EncodingUtils;
-import org.objectweb.asm.util.TraceClassVisitor;
 
 import jnr.constants.Constant;
 import jnr.constants.ConstantSet;
@@ -278,7 +277,7 @@ public final class Ruby implements Constantizable {
 
         this.staticScopeFactory = new StaticScopeFactory(this);
         this.beanManager        = BeanManagerFactory.create(this, config.isManagementEnabled());
-        this.jitCompiler        = new JITCompiler(this);
+//        this.jitCompiler        = new JITCompiler(this);
         this.parserStats        = new ParserStats(this);
         this.caches             = new Caches();
 
@@ -315,14 +314,15 @@ public final class Ruby implements Constantizable {
             objectSpacer = DISABLED_OBJECTSPACE;
         }
 
-        posix = POSIXFactory.getPOSIX(new JRubyPOSIXHandler(this), config.isNativeEnabled());
+//        posix = POSIXFactory.getPOSIX(new JRubyPOSIXHandler(this), config.isNativeEnabled());
+        posix = POSIXFactory.getJavaPOSIX(new JRubyPOSIXHandler(this));
         filenoUtil = new FilenoUtil(posix);
 
         reinitialize(false);
     }
 
     public void registerMBeans() {
-        this.beanManager.register(jitCompiler);
+//        this.beanManager.register(jitCompiler);
         this.beanManager.register(configBean);
         this.beanManager.register(parserStats);
         this.beanManager.register(runtimeBean);
@@ -369,6 +369,22 @@ public final class Ruby implements Constantizable {
         ruby.init();
         setGlobalRuntimeFirstTimeOnly(ruby);
         return ruby;
+    }
+
+    public static Ruby newEphemeralInstance() {
+        Ruby ruby = new Ruby(new RubyInstanceConfig());
+
+        ruby.init();
+        ruby.threadService.teardown();
+        ruby.jrubyClassLoader.terminateJarIndexCacheEntries();
+        ruby.jrubyClassLoader = null;
+
+        return ruby;
+    }
+
+    public void initEphemeralInstance() {
+        threadService.initMainThread();
+        jrubyClassLoader = new JRubyClassLoader(Ruby.class.getClassLoader());
     }
 
     /**
@@ -682,39 +698,39 @@ public final class Ruby implements Constantizable {
         scriptNode = addGetsLoop(scriptNode, printing, processLineEnds, split);
 
         Script script = null;
-        boolean compile = getInstanceConfig().getCompileMode().shouldPrecompileCLI();
-        if (compile) {
-            try {
-                script = tryCompile(scriptNode);
-                if (Options.JIT_LOGGING.load()) {
-                    LOG.info("successfully compiled: {}", scriptNode.getFile());
-                }
-            } catch (Throwable e) {
-                if (Options.JIT_LOGGING.load()) {
-                    if (Options.JIT_LOGGING_VERBOSE.load()) {
-                        LOG.error("failed to compile: " + scriptNode.getFile(), e);
-                    }
-                    else {
-                        LOG.error("failed to compile: " + scriptNode.getFile() + " - " + e);
-                    }
-                }
-            }
-            if (compile && script == null) {
-                // IR JIT does not handle all scripts yet, so let those that fail run in interpreter instead
-                // FIXME: restore error once JIT should handle everything
-            }
-        }
+//        boolean compile = getInstanceConfig().getCompileMode().shouldPrecompileCLI();
+//        if (compile) {
+//            try {
+//                script = tryCompile(scriptNode);
+//                if (Options.JIT_LOGGING.load()) {
+//                    LOG.info("successfully compiled: {}", scriptNode.getFile());
+//                }
+//            } catch (Throwable e) {
+//                if (Options.JIT_LOGGING.load()) {
+//                    if (Options.JIT_LOGGING_VERBOSE.load()) {
+//                        LOG.error("failed to compile: " + scriptNode.getFile(), e);
+//                    }
+//                    else {
+//                        LOG.error("failed to compile: " + scriptNode.getFile() + " - " + e);
+//                    }
+//                }
+//            }
+//            if (compile && script == null) {
+//                // IR JIT does not handle all scripts yet, so let those that fail run in interpreter instead
+//                // FIXME: restore error once JIT should handle everything
+//            }
+//        }
 
         // we do pre and post load outside the "body" versions to pre-prepare
         // and pre-push the dynamic scope we need for lastline
         Helpers.preLoad(context, ((RootNode) scriptNode).getStaticScope().getVariables());
 
         try {
-            if (script != null) {
-                runScriptBody(script);
-            } else {
+//            if (script != null) {
+//                runScriptBody(script);
+//            } else {
                 runInterpreterBody(scriptNode);
-            }
+//            }
 
         } finally {
             Helpers.postLoad(context);
@@ -761,27 +777,27 @@ public final class Ruby implements Constantizable {
      * @return The result of executing the script
      */
     public IRubyObject runNormally(Node scriptNode, boolean wrap) {
-        ScriptAndCode scriptAndCode = null;
-        boolean compile = getInstanceConfig().getCompileMode().shouldPrecompileCLI();
-        if (compile || config.isShowBytecode()) {
-            scriptAndCode = precompileCLI((RootNode) scriptNode);
-        }
-
-        if (scriptAndCode != null) {
-            if (config.isShowBytecode()) {
-                TraceClassVisitor tracer = new TraceClassVisitor(new PrintWriter(System.err));
-                ClassReader reader = new ClassReader(scriptAndCode.bytecode());
-                reader.accept(tracer, 0);
-                return getNil();
-            }
-
-            return runScript(scriptAndCode.script(), wrap);
-        } else {
+//        ScriptAndCode scriptAndCode = null;
+//        boolean compile = getInstanceConfig().getCompileMode().shouldPrecompileCLI();
+//        if (compile || config.isShowBytecode()) {
+//            scriptAndCode = precompileCLI((RootNode) scriptNode);
+//        }
+//
+//        if (scriptAndCode != null) {
+//            if (config.isShowBytecode()) {
+//                TraceClassVisitor tracer = new TraceClassVisitor(new PrintWriter(System.err));
+//                ClassReader reader = new ClassReader(scriptAndCode.bytecode());
+//                reader.accept(tracer, 0);
+//                return getNil();
+//            }
+//
+//            return runScript(scriptAndCode.script(), wrap);
+//        } else {
             // FIXME: temporarily allowing JIT to fail for $0 and fall back on interpreter
 //            failForcedCompile(scriptNode);
 
             return runInterpreter(scriptNode);
-        }
+//        }
     }
 
     /**
@@ -3419,7 +3435,7 @@ public final class Ruby implements Constantizable {
         getThreadService().teardown();
 
         // shut down executors
-        getJITCompiler().shutdown();
+//        getJITCompiler().shutdown();
         getExecutor().shutdown();
         getFiberExecutor().shutdown();
 
@@ -5078,7 +5094,7 @@ public final class Ruby implements Constantizable {
             1     /* concurrency level - mostly reads here so this can be 1 */);
 
     private final Invalidator checkpointInvalidator;
-    private final ThreadService threadService;
+    private ThreadService threadService;
 
     private final POSIX posix;
 
@@ -5171,7 +5187,7 @@ public final class Ruby implements Constantizable {
 
     // Java support
     private JavaSupport javaSupport;
-    private final JRubyClassLoader jrubyClassLoader;
+    private JRubyClassLoader jrubyClassLoader;
 
     // Management/monitoring
     private BeanManager beanManager;
@@ -5180,7 +5196,7 @@ public final class Ruby implements Constantizable {
     private ParserStats parserStats;
 
     // Compilation
-    private final JITCompiler jitCompiler;
+    private /*final*/ JITCompiler jitCompiler;
 
     // Cache invalidation
     private final Caches caches;
@@ -5188,6 +5204,7 @@ public final class Ruby implements Constantizable {
     // Note: this field and the following static initializer
     // must be located be in this order!
     private volatile static boolean securityRestricted = false;
+
     static {
         if (SafePropertyAccessor.isSecurityProtected("jruby.reflected.handles")) {
             // can't read non-standard properties
@@ -5340,13 +5357,13 @@ public final class Ruby implements Constantizable {
         void addToObjectSpace(Ruby runtime, boolean useObjectSpace, IRubyObject object);
     }
 
-    private static final ObjectSpacer DISABLED_OBJECTSPACE = new ObjectSpacer() {
+    private final ObjectSpacer DISABLED_OBJECTSPACE = new ObjectSpacer() {
         @Override
         public void addToObjectSpace(Ruby runtime, boolean useObjectSpace, IRubyObject object) {
         }
     };
 
-    private static final ObjectSpacer ENABLED_OBJECTSPACE = new ObjectSpacer() {
+    private final ObjectSpacer ENABLED_OBJECTSPACE = new ObjectSpacer() {
         @Override
         public void addToObjectSpace(Ruby runtime, boolean useObjectSpace, IRubyObject object) {
             if (useObjectSpace) runtime.objectSpace.add(object);

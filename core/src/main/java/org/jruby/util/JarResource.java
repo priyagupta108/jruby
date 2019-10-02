@@ -44,44 +44,44 @@ abstract class JarResource implements FileResource, DummyResourceStat.FileResour
     }
 
     private static JarResource createJarResource(String jarPath, String entryPath, boolean rootSlashPrefix) {
-        JarCache.JarIndex index = jarCache.getIndex(jarPath);
-
-        if (index == null) { // Jar doesn't exist
-            try {
-                jarPath = URLDecoder.decode(jarPath, "UTF-8");
-                entryPath = URLDecoder.decode(entryPath, "UTF-8");
-            }
-            catch (IllegalArgumentException e) {
-                // something in the path did not decode, so it's probably not a URI
-                // See jruby/jruby#2264.
-                return null;
-            }
-            catch (UnsupportedEncodingException e) {
-                throw new AssertionError(e);
-            }
-            index = jarCache.getIndex(jarPath);
-
-            if (index == null) return null; // Jar doesn't exist
-        }
-
-        // Try it as directory first, because jars tend to have foo/ entries
-        // and it's not really possible disambiguate between files and directories.
-        String[] entries = index.getDirEntries(entryPath);
-        if (entries != null) {
-            return new JarDirectoryResource(jarPath, rootSlashPrefix, entryPath, entries);
-        }
-        if (entryPath.length() > 1 && entryPath.endsWith("/")) {  // in case 'foo/' passed
-            entries = index.getDirEntries(entryPath.substring(0, entryPath.length() - 1));
-
-            if (entries != null) {
-                return new JarDirectoryResource(jarPath, rootSlashPrefix, entryPath, entries);
-            }
-        }
-
-        JarEntry jarEntry = index.getJarEntry(entryPath);
-        if (jarEntry != null) {
-            return new JarFileResource(jarPath, rootSlashPrefix, index, jarEntry);
-        }
+//        JarCache.JarIndex index = jarCache.getIndex(jarPath);
+//
+//        if (index == null) { // Jar doesn't exist
+//            try {
+//                jarPath = URLDecoder.decode(jarPath, "UTF-8");
+//                entryPath = URLDecoder.decode(entryPath, "UTF-8");
+//            }
+//            catch (IllegalArgumentException e) {
+//                // something in the path did not decode, so it's probably not a URI
+//                // See jruby/jruby#2264.
+//                return null;
+//            }
+//            catch (UnsupportedEncodingException e) {
+//                throw new AssertionError(e);
+//            }
+//            index = jarCache.getIndex(jarPath);
+//
+//            if (index == null) return null; // Jar doesn't exist
+//        }
+//
+//        // Try it as directory first, because jars tend to have foo/ entries
+//        // and it's not really possible disambiguate between files and directories.
+//        String[] entries = index.getDirEntries(entryPath);
+//        if (entries != null) {
+//            return new JarDirectoryResource(jarPath, rootSlashPrefix, entryPath, entries);
+//        }
+//        if (entryPath.length() > 1 && entryPath.endsWith("/")) {  // in case 'foo/' passed
+//            entries = index.getDirEntries(entryPath.substring(0, entryPath.length() - 1));
+//
+//            if (entries != null) {
+//                return new JarDirectoryResource(jarPath, rootSlashPrefix, entryPath, entries);
+//            }
+//        }
+//
+//        JarEntry jarEntry = index.getJarEntry(entryPath);
+//        if (jarEntry != null) {
+//            return new JarFileResource(jarPath, rootSlashPrefix, index, jarEntry);
+//        }
 
         return null;
     }

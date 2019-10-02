@@ -1523,11 +1523,11 @@ public class IRRuntimeHelpers {
         method.captureParentRefinements(context);
 
         DynamicMethod newMethod;
-        if (context.runtime.getInstanceConfig().getCompileMode() == RubyInstanceConfig.CompileMode.OFF) {
+//        if (context.runtime.getInstanceConfig().getCompileMode() == RubyInstanceConfig.CompileMode.OFF) {
             newMethod = new InterpretedIRMethod(method, Visibility.PUBLIC, rubyClass);
-        } else {
-            newMethod = new MixedModeIRMethod(method, Visibility.PUBLIC, rubyClass);
-        }
+//        } else {
+//            newMethod = new MixedModeIRMethod(method, Visibility.PUBLIC, rubyClass);
+//        }
 
         rubyClass.addMethod(methodName.idString(), newMethod);
         if (!rubyClass.isRefinement()) obj.callMethod(context, "singleton_method_added", methodName);
@@ -1581,11 +1581,11 @@ public class IRRuntimeHelpers {
         method.captureParentRefinements(context);
 
         DynamicMethod newMethod;
-        if (runtime.getInstanceConfig().getCompileMode() == RubyInstanceConfig.CompileMode.OFF) {
+//        if (runtime.getInstanceConfig().getCompileMode() == RubyInstanceConfig.CompileMode.OFF) {
             newMethod = new InterpretedIRMethod(method, newVisibility, rubyClass);
-        } else {
-            newMethod = new MixedModeIRMethod(method, newVisibility, rubyClass);
-        }
+//        } else {
+//            newMethod = new MixedModeIRMethod(method, newVisibility, rubyClass);
+//        }
 
         Helpers.addInstanceMethod(rubyClass, methodName, newMethod, currVisibility, context, runtime);
     }

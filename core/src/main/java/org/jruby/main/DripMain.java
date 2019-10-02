@@ -15,7 +15,7 @@ public class DripMain {
     public static final String JRUBY_DRIP_WARMUP_ENV = "JRUBY_DRIP_WARMUP";
     public static final String JRUBY_DRIP_WARMUP_DEFAULT = "1 + 1";
     public static final String JRUBY_DRIP_PREBOOT_FILE = "./dripmain.rb";
-
+    
     public static void main(String[] args) throws IOException {
         // warmup JVM first
         Ruby ruby = Ruby.newInstance();

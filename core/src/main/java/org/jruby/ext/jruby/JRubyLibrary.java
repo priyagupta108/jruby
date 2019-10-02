@@ -263,28 +263,29 @@ public class JRubyLibrary implements Library {
     @JRubyMethod(module = true, name = "compile", required = 1, optional = 3)
     public static IRubyObject compile(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         // def compile(content = nil, filename = DEFAULT_FILENAME, extra_position_info = false, &block)
-        final Ruby runtime = context.runtime;
+//        final Ruby runtime = context.runtime;
 
-        final RubyString content = args[0].convertToString();
-        args[0] = content;
-        final RubyString filename = args.length > 1 ? args[1].convertToString() : RubyString.newEmptyString(runtime);
-
-        IRScriptBody scope = compileIR(context, args, block);
-
-        JVMVisitor visitor = new JVMVisitor(runtime);
-        JVMVisitorMethodContext methodContext = new JVMVisitorMethodContext();
-        byte[] bytes = visitor.compileToBytecode(scope, methodContext);
-
-        scope.getStaticScope().setModule( runtime.getTopSelf().getMetaClass() );
-
-        RubyClass CompiledScript = (RubyClass) runtime.getModule("JRuby").getConstantAt("CompiledScript");
-        // JRuby::CompiledScript#initialize(filename, class_name, content, bytes)
-        return CompiledScript.newInstance(context, new IRubyObject[] {
-                filename,
-                runtime.newSymbol(scope.getId()),
-                content,
-                Java.getInstance(runtime, bytes)
-        }, Block.NULL_BLOCK);
+//        final RubyString content = args[0].convertToString();
+//        args[0] = content;
+//        final RubyString filename = args.length > 1 ? args[1].convertToString() : RubyString.newEmptyString(runtime);
+//
+//        IRScriptBody scope = compileIR(context, args, block);
+//
+//        JVMVisitor visitor = new JVMVisitor(runtime);
+//        JVMVisitorMethodContext methodContext = new JVMVisitorMethodContext();
+//        byte[] bytes = visitor.compileToBytecode(scope, methodContext);
+//
+//        scope.getStaticScope().setModule( runtime.getTopSelf().getMetaClass() );
+//
+//        RubyClass CompiledScript = (RubyClass) runtime.getModule("JRuby").getConstantAt("CompiledScript");
+//        // JRuby::CompiledScript#initialize(filename, class_name, content, bytes)
+//        return CompiledScript.newInstance(context, new IRubyObject[] {
+//                filename,
+//                runtime.newSymbol(scope.getId()),
+//                content,
+//                Java.getInstance(runtime, bytes)
+//        }, Block.NULL_BLOCK);
+        return context.nil;
     }
 
     @Deprecated // @JRubyMethod(meta = true, visibility = Visibility.PRIVATE)

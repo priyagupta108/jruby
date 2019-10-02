@@ -118,7 +118,7 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
 
     @Override
     protected IRubyObject commonYieldPath(ThreadContext context, Block block, Block.Type type, IRubyObject[] args, IRubyObject self, Block blockArg) {
-        if (callCount >= 0) promoteToFullBuild(context);
+//        if (callCount >= 0) promoteToFullBuild(context);
 
         InterpreterContext ic = ensureInstrsReady();
 

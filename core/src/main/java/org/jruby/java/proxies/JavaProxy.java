@@ -15,6 +15,7 @@ import java.util.Map;
 
 import com.headius.backport9.modules.Module;
 import com.headius.backport9.modules.Modules;
+import com.headius.backport9.modules.impl.ModuleDummy;
 import org.jruby.AbstractRubyMethod;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
@@ -445,7 +446,7 @@ public class JavaProxy extends RubyObject {
 
         try {
             for (Class<?> clazz = originalClass; clazz != null; clazz = clazz.getSuperclass()) {
-                Module module = Modules.getModule(clazz);
+                Module module = new ModuleDummy(); //Modules.getModule(clazz);
                 Package pkg = clazz.getPackage();
 
                 // Default package cannot be used by modules

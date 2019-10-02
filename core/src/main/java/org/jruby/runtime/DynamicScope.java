@@ -32,7 +32,7 @@ import org.jruby.ir.JIT;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public abstract class DynamicScope implements Cloneable {
+public abstract class DynamicScope {
     // Static scoping information for this scope
     protected final StaticScope staticScope;
 
@@ -68,7 +68,7 @@ public abstract class DynamicScope implements Cloneable {
      * walk up to hard lexical boundary.
      *
      */
-    public final DynamicScope getParentScope() {
+    public /*final*/ DynamicScope getParentScope() {
         return parent;
     }
 
@@ -101,7 +101,7 @@ public abstract class DynamicScope implements Cloneable {
      *
      * @return static complement to this scope
      */
-    public final StaticScope getStaticScope() {
+    public /*final*/ StaticScope getStaticScope() {
         return staticScope;
     }
 

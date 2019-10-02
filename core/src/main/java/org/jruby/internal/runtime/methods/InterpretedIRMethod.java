@@ -77,7 +77,7 @@ public class InterpretedIRMethod extends AbstractIRMethod implements Compilable<
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
         if (IRRuntimeHelpers.isDebug()) doDebug();
 
-        if (callCount >= 0) promoteToFullBuild(context);
+//        if (callCount >= 0) promoteToFullBuild(context);
         return INTERPRET_METHOD(context, ensureInstrsReady(), clazz, self, name, args, block);
     }
 
@@ -85,7 +85,7 @@ public class InterpretedIRMethod extends AbstractIRMethod implements Compilable<
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
         if (IRRuntimeHelpers.isDebug()) doDebug();
 
-        if (callCount >= 0) promoteToFullBuild(context);
+//        if (callCount >= 0) promoteToFullBuild(context);
         return INTERPRET_METHOD(context, ensureInstrsReady(), clazz, self, name, args, Block.NULL_BLOCK);
     }
 
@@ -113,7 +113,7 @@ public class InterpretedIRMethod extends AbstractIRMethod implements Compilable<
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) {
         if (IRRuntimeHelpers.isDebug()) doDebug();
 
-        if (callCount >= 0) promoteToFullBuild(context);
+//        if (callCount >= 0) promoteToFullBuild(context);
         return INTERPRET_METHOD(context, ensureInstrsReady(), clazz, self, name, block);
     }
 
@@ -121,7 +121,7 @@ public class InterpretedIRMethod extends AbstractIRMethod implements Compilable<
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
         if (IRRuntimeHelpers.isDebug()) doDebug();
 
-        if (callCount >= 0) promoteToFullBuild(context);
+//        if (callCount >= 0) promoteToFullBuild(context);
         return INTERPRET_METHOD(context, ensureInstrsReady(), clazz, self, name, Block.NULL_BLOCK);
     }
 
@@ -149,7 +149,7 @@ public class InterpretedIRMethod extends AbstractIRMethod implements Compilable<
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, Block block) {
         if (IRRuntimeHelpers.isDebug()) doDebug();
 
-        if (callCount >= 0) promoteToFullBuild(context);
+//        if (callCount >= 0) promoteToFullBuild(context);
         return INTERPRET_METHOD(context, ensureInstrsReady(), clazz, self, name, arg0, block);
     }
 
@@ -157,7 +157,7 @@ public class InterpretedIRMethod extends AbstractIRMethod implements Compilable<
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0) {
         if (IRRuntimeHelpers.isDebug()) doDebug();
 
-        if (callCount >= 0) promoteToFullBuild(context);
+//        if (callCount >= 0) promoteToFullBuild(context);
         return INTERPRET_METHOD(context, ensureInstrsReady(), clazz, self, name, arg0, Block.NULL_BLOCK);
     }
 
@@ -185,7 +185,7 @@ public class InterpretedIRMethod extends AbstractIRMethod implements Compilable<
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, Block block) {
         if (IRRuntimeHelpers.isDebug()) doDebug();
 
-        if (callCount >= 0) promoteToFullBuild(context);
+//        if (callCount >= 0) promoteToFullBuild(context);
         return INTERPRET_METHOD(context, ensureInstrsReady(), clazz, self, name, arg0, arg1, block);
     }
 
@@ -193,7 +193,7 @@ public class InterpretedIRMethod extends AbstractIRMethod implements Compilable<
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1) {
         if (IRRuntimeHelpers.isDebug()) doDebug();
 
-        if (callCount >= 0) promoteToFullBuild(context);
+//        if (callCount >= 0) promoteToFullBuild(context);
         return INTERPRET_METHOD(context, ensureInstrsReady(), clazz, self, name, arg0, arg1, Block.NULL_BLOCK);
     }
 
@@ -221,7 +221,7 @@ public class InterpretedIRMethod extends AbstractIRMethod implements Compilable<
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
         if (IRRuntimeHelpers.isDebug()) doDebug();
 
-        if (callCount >= 0) promoteToFullBuild(context);
+//        if (callCount >= 0) promoteToFullBuild(context);
         return INTERPRET_METHOD(context, ensureInstrsReady(), clazz, self, name, arg0, arg1, arg2, block);
     }
 
@@ -229,7 +229,7 @@ public class InterpretedIRMethod extends AbstractIRMethod implements Compilable<
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
         if (IRRuntimeHelpers.isDebug()) doDebug();
 
-        if (callCount >= 0) promoteToFullBuild(context);
+//        if (callCount >= 0) promoteToFullBuild(context);
         return INTERPRET_METHOD(context, ensureInstrsReady(), clazz, self, name, arg0, arg1, arg2, Block.NULL_BLOCK);
     }
 

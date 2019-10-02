@@ -33,6 +33,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.util.cli.Options;
 
 import java.lang.invoke.MethodHandles;
+import java.util.List;
 
 /**
  * A set of factory methods to construct optimizing utilities for compilation,
@@ -47,11 +48,28 @@ public class OptoFactory {
      * @return a "constant" representation of this object appropriate to the current JVM and runtime modes
      */
     public static final Object newConstantWrapper(Class type, Object object) {
-        return OptoFactory.CONSTANT_FACTORY.create(type, object);
+//        return OptoFactory.CONSTANT_FACTORY.create(type, object);
+        return object;
     }
 
     public static Invalidator newConstantInvalidator(Ruby runtime) {
-        return new ConstantInvalidator(runtime.getCaches());
+//        return new ConstantInvalidator(runtime.getCaches());
+        return new Invalidator() {
+            @Override
+            public void invalidate() {
+
+            }
+
+            @Override
+            public void invalidateAll(List<Invalidator> invalidators) {
+
+            }
+
+            @Override
+            public Object getData() {
+                return null;
+            }
+        };
     }
 
     private static Boolean indyEnabled() {
@@ -59,20 +77,36 @@ public class OptoFactory {
     }
 
     public static Invalidator newGlobalInvalidator(int maxFailures) {
-        return new FailoverSwitchPointInvalidator(maxFailures);
+//        return new FailoverSwitchPointInvalidator(maxFailures);
+        return new Invalidator() {
+            @Override
+            public void invalidate() {
+
+            }
+
+            @Override
+            public void invalidateAll(List<Invalidator> invalidators) {
+
+            }
+
+            @Override
+            public Object getData() {
+                return null;
+            }
+        };
     }
 
     public static Invalidator newMethodInvalidator(RubyModule module) {
-        if (indyEnabled()) {
-            try {
-                return new GenerationAndSwitchPointInvalidator(module);
-            } catch (Error e) {
-                disableIndy();
-                throw e;
-            } catch (Throwable t) {
-                disableIndy();
-            }
-        }
+//        if (indyEnabled()) {
+//            try {
+//                return new GenerationAndSwitchPointInvalidator(module);
+//            } catch (Error e) {
+//                disableIndy();
+//                throw e;
+//            } catch (Throwable t) {
+//                disableIndy();
+//            }
+//        }
         return new GenerationInvalidator(module);
     }
 

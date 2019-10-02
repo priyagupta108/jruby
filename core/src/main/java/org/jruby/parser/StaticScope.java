@@ -192,7 +192,7 @@ public class StaticScope implements Serializable {
         if (constructor == null) constructor = acquireConstructor();
 
         try {
-            return (DynamicScope) constructor.invokeExact(this, parent);
+            return new ManyVarsDynamicScope(this, parent); //DynamicScope) constructor.invokeExact(this, parent);
         } catch (Throwable e) {
             Helpers.throwException(e);
             return null; // not reached
@@ -207,11 +207,11 @@ public class StaticScope implements Serializable {
 
         int numberOfVariables = getNumberOfVariables();
 
-        if (numberOfVariables > MAX_SPECIALIZED_SIZE) {
+//        if (numberOfVariables > MAX_SPECIALIZED_SIZE) {
             constructor = ManyVarsDynamicScope.CONSTRUCTOR;
-        } else {
-            constructor = DynamicScopeGenerator.generate(numberOfVariables);
-        }
+//        } else {
+//            constructor = DynamicScopeGenerator.generate(numberOfVariables);
+//        }
 
         this.constructor = constructor;
 

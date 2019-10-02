@@ -145,11 +145,11 @@ public class VariableTableManager {
      * @param value the value
      */
     public void setVariableInternal(RubyBasicObject self, int index, Object value) {
-        if(UnsafeHolder.U == null) {
+//        if(UnsafeHolder.U == null) {
             SynchronizedVariableAccessor.setVariable(self,realClass,index,value);
-        } else {
-            StampedVariableAccessor.setVariable(self,realClass,index,value);
-        }
+//        } else {
+//            StampedVariableAccessor.setVariable(self,realClass,index,value);
+//        }
     }
 
     /**
@@ -161,11 +161,11 @@ public class VariableTableManager {
      * @param value the value of the variable
      */
     public static void setVariableInternal(RubyClass realClass, RubyBasicObject self, int index, Object value) {
-        if(UnsafeHolder.U == null) {
+//        if(UnsafeHolder.U == null) {
             SynchronizedVariableAccessor.setVariable(self,realClass,index,value);
-        } else {
-            StampedVariableAccessor.setVariable(self,realClass,index,value);
-        }
+//        } else {
+//            StampedVariableAccessor.setVariable(self,realClass,index,value);
+//        }
     }
 
     /**
@@ -371,33 +371,33 @@ public class VariableTableManager {
 
             Object[] otherVars = ((RubyBasicObject) other).varTable;
 
-            if(UnsafeHolder.U == null)
-            {
+//            if(UnsafeHolder.U == null)
+//            {
                 synchronized (self) {
                     self.varTable = makeSyncedTable(self.varTable, otherVars, idIndex);
                 }
-            } else {
-                for(;;) {
-                    int oldStamp = self.varTableStamp;
-                    // wait for read mode
-                    if((oldStamp & 0x01) == 1)
-                        continue;
-                    // acquire exclusive write mode
-                    if(!UnsafeHolder.U.compareAndSwapInt(self, RubyBasicObject.STAMP_OFFSET, oldStamp, ++oldStamp))
-                        continue;
-
-                    Object[] currentTable = (Object[]) UnsafeHolder.U.getObjectVolatile(self, RubyBasicObject.VAR_TABLE_OFFSET);
-                    Object[] newTable = makeSyncedTable(currentTable,otherVars, idIndex);
-
-                    UnsafeHolder.U.putOrderedObject(self, RubyBasicObject.VAR_TABLE_OFFSET, newTable);
-
-                    // release write mode
-                    self.varTableStamp = oldStamp+1;
-                    break;
-                }
-
-
-            }
+//            } else {
+//                for(;;) {
+//                    int oldStamp = self.varTableStamp;
+//                    // wait for read mode
+//                    if((oldStamp & 0x01) == 1)
+//                        continue;
+//                    // acquire exclusive write mode
+//                    if(!UnsafeHolder.U.compareAndSwapInt(self, RubyBasicObject.STAMP_OFFSET, oldStamp, ++oldStamp))
+//                        continue;
+//
+//                    Object[] currentTable = (Object[]) UnsafeHolder.U.getObjectVolatile(self, RubyBasicObject.VAR_TABLE_OFFSET);
+//                    Object[] newTable = makeSyncedTable(currentTable,otherVars, idIndex);
+//
+//                    UnsafeHolder.U.putOrderedObject(self, RubyBasicObject.VAR_TABLE_OFFSET, newTable);
+//
+//                    // release write mode
+//                    self.varTableStamp = oldStamp+1;
+//                    break;
+//                }
+//
+//
+//            }
 
         } else {
             for (Map.Entry<String, VariableAccessor> entry : otherRealClass.getVariableAccessorsForRead().entrySet()) {
@@ -551,20 +551,20 @@ public class VariableTableManager {
         final int newIndex = myVariableNames.length;
 
         VariableAccessor newVariableAccessor;
-        if (Options.VOLATILE_VARIABLES.load()) {
-            if (UnsafeHolder.U == null) {
+//        if (Options.VOLATILE_VARIABLES.load()) {
+//            if (UnsafeHolder.U == null) {
                 newVariableAccessor = new SynchronizedVariableAccessor(realClass, name, newIndex, id);
-            } else {
-                newVariableAccessor = new StampedVariableAccessor(realClass, name, newIndex, id);
-            }
-        } else {
-            if (UnsafeHolder.U == null) {
-                newVariableAccessor = new NonvolatileVariableAccessor(realClass, name, newIndex, id);
-            } else {
-                // We still need safe updating of the vartable, so we fall back on sync here too.
-                newVariableAccessor = new StampedVariableAccessor(realClass, name, newIndex, id);
-            }
-        }
+//            } else {
+//                newVariableAccessor = new StampedVariableAccessor(realClass, name, newIndex, id);
+//            }
+//        } else {
+//            if (UnsafeHolder.U == null) {
+//                newVariableAccessor = new NonvolatileVariableAccessor(realClass, name, newIndex, id);
+//            } else {
+//                // We still need safe updating of the vartable, so we fall back on sync here too.
+//                newVariableAccessor = new StampedVariableAccessor(realClass, name, newIndex, id);
+//            }
+//        }
 
         final String[] newVariableNames = new String[newIndex + 1];
         ArraySupport.copy(myVariableNames, 0, newVariableNames, 0, newIndex);

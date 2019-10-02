@@ -37,7 +37,7 @@ public final class UnsafeHolder {
     /**
      * Holds a reference to Unsafe if available, null otherwise.    
      */
-    public static final sun.misc.Unsafe U = loadUnsafe();
+    public static final sun.misc.Unsafe U = null; //loadUnsafe();
     
     private static sun.misc.Unsafe loadUnsafe() {
         try {

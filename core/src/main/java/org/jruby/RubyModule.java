@@ -325,9 +325,10 @@ public class RubyModule extends RubyObject {
     }
 
     protected final MethodHandle newIdTest() {
-        return Binder.from(boolean.class, ThreadContext.class, IRubyObject.class)
-                .insert(2, id)
-                .invoke(testModuleMatch);
+//        return Binder.from(boolean.class, ThreadContext.class, IRubyObject.class)
+//                .insert(2, id)
+//                .invoke(testModuleMatch);
+        return null;
     }
 
     /** separate path for MetaClass construction
@@ -1209,25 +1210,25 @@ public class RubyModule extends RubyObject {
     }
 
     public static TypePopulator loadPopulatorFor(Class<?> type) {
-        if (Options.DEBUG_FULLTRACE.load() || Options.REFLECTED_HANDLES.load()) {
-            // we want non-generated invokers or need full traces, use default (slow) populator
-            LOG.debug("trace mode, using default populator");
-        } else {
+//        if (Options.DEBUG_FULLTRACE.load() || Options.REFLECTED_HANDLES.load()) {
+//            // we want non-generated invokers or need full traces, use default (slow) populator
+//            LOG.debug("trace mode, using default populator");
+//        } else {
             try {
                 String qualifiedName = Constants.GENERATED_PACKAGE + type.getCanonicalName().replace('.', '$');
                 String fullName = qualifiedName + AnnotationBinder.POPULATOR_SUFFIX;
                 String fullPath = fullName.replace('.', '/') + ".class";
                 if (LOG.isDebugEnabled()) LOG.debug("looking for populator " + fullName);
 
-                if (Ruby.getClassLoader().getResource(fullPath) == null) {
-                    LOG.debug("could not find it, using default populator");
-                } else {
+//                if (Ruby.getClassLoader().getResource(fullPath) == null) {
+//                    LOG.debug("could not find it, using default populator");
+//                } else {
                     return (TypePopulator) Class.forName(fullName).newInstance();
-                }
+//                }
             } catch (Throwable ex) {
                 if (LOG.isDebugEnabled()) LOG.debug("could not find populator, using default (" + ex + ')');
             }
-        }
+//        }
 
         return new TypePopulator.ReflectiveTypePopulator(type);
     }
@@ -2040,13 +2041,13 @@ public class RubyModule extends RubyObject {
 
             if (allocator == null) {
                 if (isReifiable(runtime, superClazz)) {
-                    if (Options.REIFY_CLASSES.load()) {
-                        allocator = REIFYING_OBJECT_ALLOCATOR;
-                    } else if (Options.REIFY_VARIABLES.load()) {
-                        allocator = IVAR_INSPECTING_OBJECT_ALLOCATOR;
-                    } else {
+//                    if (Options.REIFY_CLASSES.load()) {
+//                        allocator = REIFYING_OBJECT_ALLOCATOR;
+//                    } else if (Options.REIFY_VARIABLES.load()) {
+//                        allocator = IVAR_INSPECTING_OBJECT_ALLOCATOR;
+//                    } else {
                         allocator = OBJECT_ALLOCATOR;
-                    }
+//                    }
                 } else {
                     allocator = superClazz.getAllocator();
                 }
@@ -2064,7 +2065,7 @@ public class RubyModule extends RubyObject {
     private boolean isReifiable(Ruby runtime, RubyClass superClass) {
         if (superClass == runtime.getObject()) return true;
 
-        if (superClass.getAllocator() == IVAR_INSPECTING_OBJECT_ALLOCATOR) return true;
+//        if (superClass.getAllocator() == IVAR_INSPECTING_OBJECT_ALLOCATOR) return true;
 
         return false;
     }

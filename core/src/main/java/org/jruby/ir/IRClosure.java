@@ -70,7 +70,7 @@ public class IRClosure extends IRScope {
             this.body = null;
         } else {
             boolean shouldJit = getManager().getInstanceConfig().getCompileMode().shouldJIT();
-            this.body = shouldJit ? new MixedModeIRBlockBody(c, c.getSignature()) : new InterpretedIRBlockBody(c, c.getSignature());
+            this.body = /*shouldJit ? new MixedModeIRBlockBody(c, c.getSignature()) :*/ new InterpretedIRBlockBody(c, c.getSignature());
         }
         isEND = c.isEND;
 
@@ -108,7 +108,7 @@ public class IRClosure extends IRScope {
             this.body = null;
         } else {
             boolean shouldJit = manager.getInstanceConfig().getCompileMode().shouldJIT();
-            this.body = shouldJit ? new MixedModeIRBlockBody(this, signature) : new InterpretedIRBlockBody(this, signature);
+            this.body = /*shouldJit ? new MixedModeIRBlockBody(this, signature) :*/ new InterpretedIRBlockBody(this, signature);
             if (staticScope != null && !isBeginEndBlock) {
                 staticScope.setIRScope(this);
                 staticScope.setScopeType(this.getScopeType());

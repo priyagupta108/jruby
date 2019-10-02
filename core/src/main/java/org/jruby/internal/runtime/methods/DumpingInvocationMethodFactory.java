@@ -30,7 +30,12 @@ package org.jruby.internal.runtime.methods;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.util.List;
+import java.util.Map;
 
+import org.jruby.RubyModule;
+import org.jruby.anno.InvokerGenerator;
+import org.jruby.anno.JavaMethodDescriptor;
 import org.objectweb.asm.ClassWriter;
 
 /**
@@ -63,5 +68,28 @@ public class DumpingInvocationMethodFactory extends InvocationMethodFactory {
         } catch(Exception e) {
         }
         return classLoader.defineClass(name, code);
+    }
+
+    public static void main(String[] args) throws Throwable {
+        String target = args[0];
+        DumpingInvocationMethodFactory dumper = new DumpingInvocationMethodFactory(target, DumpingInvocationMethodFactory.class.getClassLoader());
+
+        for (int i = 1; i < args.length; i++) {
+            String name = args[i];
+
+            RubyModule.MethodClumper clumper = new RubyModule.MethodClumper();
+
+            Class cls = Class.forName(name, false, InvokerGenerator.class.getClassLoader());
+
+            clumper.clump(cls);
+
+            for (Map.Entry<String, List<JavaMethodDescriptor>> entry : clumper.getStaticAnnotatedMethods().entrySet()) {
+                dumper.getAnnotatedMethodClass(entry.getValue());
+            }
+
+            for (Map.Entry<String, List<JavaMethodDescriptor>> entry : clumper.getAnnotatedMethods().entrySet()) {
+                dumper.getAnnotatedMethodClass(entry.getValue());
+            }
+        }
     }
 }// DumpingInvocationMethodFactory

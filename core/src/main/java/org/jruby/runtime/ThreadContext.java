@@ -765,8 +765,8 @@ public final class ThreadContext {
         traceType.getFormat().renderBacktrace(backtraceData.getBacktrace(runtime), sb, false);
     }
 
-    public static final StackWalker WALKER = StackWalker.getInstance();
     public static final StackWalker WALKER8 = new StackWalker8();
+    public static final StackWalker WALKER = WALKER8; //StackWalker.getInstance();
 
     /**
      * Create an Array with backtrace information for Kernel#caller

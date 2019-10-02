@@ -338,7 +338,7 @@ public abstract class InvokeSite extends MutableCallSite {
         if (mh == null) mh = buildNotEqualHandle(entry, self);
         if (mh == null) mh = Bootstrap.buildNativeHandle(this, entry, blockGiven);
         if (mh == null) mh = buildJavaFieldHandle(this, entry, self);
-        if (mh == null) mh = Bootstrap.buildIndyHandle(this, entry);
+//        if (mh == null) mh = Bootstrap.buildIndyHandle(this, entry);
         if (mh == null) mh = Bootstrap.buildJittedHandle(this, entry, blockGiven);
         if (mh == null) mh = Bootstrap.buildAttrHandle(this, entry, self);
         if (mh == null) mh = buildAliasHandle(entry, self);

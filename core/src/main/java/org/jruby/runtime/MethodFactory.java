@@ -60,11 +60,11 @@ public abstract class MethodFactory {
      */
     public static MethodFactory createFactory(ClassLoader classLoader) {
         // otherwise, generate invokers at runtime
-        if (Options.INVOKEDYNAMIC_HANDLES.load()) {
-            return new InvokeDynamicMethodFactory(classLoader);
-        } else {
+//        if (Options.INVOKEDYNAMIC_HANDLES.load()) {
+//            return new InvokeDynamicMethodFactory(classLoader);
+//        } else {
             return new InvocationMethodFactory(classLoader);
-        }
+//        }
     }
 
     /**

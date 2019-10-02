@@ -77,7 +77,7 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
         if (IRRuntimeHelpers.isDebug()) doDebug();
 
         // try jit before checking actualMethod, so we use jitted version immediately if it's ready
-        if (callCount >= 0) tryJit(context, this);
+//        if (callCount >= 0) tryJit(context, this);
 
         DynamicMethod jittedMethod = actualMethod;
         if (jittedMethod != null) {
@@ -112,7 +112,7 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
         if (IRRuntimeHelpers.isDebug()) doDebug();
 
         // try jit before checking actualMethod, so we use jitted version immediately if it's ready
-        if (callCount >= 0) tryJit(context, this);
+//        if (callCount >= 0) tryJit(context, this);
 
         DynamicMethod jittedMethod = actualMethod;
         if (jittedMethod != null) {
@@ -147,7 +147,7 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
         if (IRRuntimeHelpers.isDebug()) doDebug();
 
         // try jit before checking actualMethod, so we use jitted version immediately if it's ready
-        if (callCount >= 0) tryJit(context, this);
+//        if (callCount >= 0) tryJit(context, this);
 
         DynamicMethod jittedMethod = actualMethod;
         if (jittedMethod != null) {
@@ -182,7 +182,7 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
         if (IRRuntimeHelpers.isDebug()) doDebug();
 
         // try jit before checking actualMethod, so we use jitted version immediately if it's ready
-        if (callCount >= 0) tryJit(context, this);
+//        if (callCount >= 0) tryJit(context, this);
 
         DynamicMethod jittedMethod = actualMethod;
         if (jittedMethod != null) {
@@ -217,7 +217,7 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
         if (IRRuntimeHelpers.isDebug()) doDebug();
 
         // try jit before checking actualMethod, so we use jitted version immediately if it's ready
-        if (callCount >= 0) tryJit(context, this);
+//        if (callCount >= 0) tryJit(context, this);
 
         DynamicMethod jittedMethod = actualMethod;
         if (jittedMethod != null) {

@@ -41,9 +41,8 @@ package org.jruby;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.exceptions.SignalException;
 import org.jruby.exceptions.ThreadKill;
-import org.jruby.main.DripMain;
+import org.jruby.main.SnapshotMain;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -61,9 +60,6 @@ import java.io.InputStream;
 import java.io.PrintStream;
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -196,8 +192,8 @@ public class Main {
 
         Main main;
 
-        if (DripMain.DRIP_RUNTIME != null) {
-            main = new Main(DripMain.DRIP_CONFIG, true);
+        if (SnapshotMain.SNAP_RUNTIME != null) {
+            main = new Main(SnapshotMain.SNAP_CONFIG, true);
         } else {
             main = new Main(true);
         }
@@ -265,9 +261,9 @@ public class Main {
 
         Ruby _runtime;
 
-        if (DripMain.DRIP_RUNTIME != null) {
+        if (SnapshotMain.SNAP_RUNTIME != null) {
             // use drip's runtime, reinitializing config
-            _runtime = DripMain.DRIP_RUNTIME;
+            _runtime = SnapshotMain.SNAP_RUNTIME;
             _runtime.reinitialize(true);
         } else {
             _runtime = Ruby.newInstance(config);
