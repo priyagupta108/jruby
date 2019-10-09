@@ -166,7 +166,7 @@ public class RubyThreadGroup extends RubyObject {
         return rubyThreadList.size();
     }
 
-    private RubyThreadGroup(Ruby runtime, RubyClass type) {
+    RubyThreadGroup(Ruby runtime, RubyClass type) {
         super(runtime, type);
     }
 

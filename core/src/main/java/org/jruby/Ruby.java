@@ -58,6 +58,7 @@ import org.jruby.ext.jruby.JRubyUtilLibrary;
 import org.jruby.ext.thread.ConditionVariable;
 import org.jruby.ext.thread.Mutex;
 import org.jruby.ext.thread.SizedQueue;
+import org.jruby.internal.runtime.NativeThread;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScriptBody;
 import org.jruby.ir.instructions.Instr;
@@ -318,7 +319,7 @@ public final class Ruby implements Constantizable {
         posix = POSIXFactory.getJavaPOSIX(new JRubyPOSIXHandler(this));
         filenoUtil = new FilenoUtil(posix);
 
-        reinitialize(false);
+        reinitialize(config, false);
     }
 
     public void registerMBeans() {
@@ -329,7 +330,8 @@ public final class Ruby implements Constantizable {
         this.beanManager.register(caches);
     }
 
-    void reinitialize(boolean reinitCore) {
+    void reinitialize(RubyInstanceConfig config, boolean reinitCore) {
+        this.config = config;
         this.doNotReverseLookupEnabled = true;
         this.staticScopeFactory = new StaticScopeFactory(this);
         this.in                 = config.getInput();
@@ -342,8 +344,24 @@ public final class Ruby implements Constantizable {
         this.kcode              = config.getKCode();
 
         if (reinitCore) {
+            threadService = new ThreadService(this);
+            initMainThread();
             RubyGlobal.initARGV(this);
             RubyGlobal.initSTDIO(this, globalVariables);
+
+            // Set up main thread object again
+            RubyThread rubyThread = new RubyThread(this, threadClass);
+            // TODO: need to isolate the "current" thread from class creation
+            rubyThread.setThreadImpl(new NativeThread(rubyThread, Thread.currentThread()));
+            getThreadService().setMainThread(Thread.currentThread(), rubyThread);
+
+            // create the default thread group
+            RubyThreadGroup defaultThreadGroup = new RubyThreadGroup(this, threadGroupClass);
+            setDefaultThreadGroup(defaultThreadGroup);
+            threadGroupClass.setConstantQuiet("Default", defaultThreadGroup);
+
+            // set to default thread group
+            getDefaultThreadGroup().addDirectly(rubyThread);
         }
     }
 
@@ -1241,14 +1259,8 @@ public final class Ruby implements Constantizable {
         // initialize the root of the class hierarchy completely
         initRoot();
 
-        // Set up the main thread in thread service
-        threadService.initMainThread();
-
-        // Get the main threadcontext (gets constructed for us)
-        final ThreadContext context = getCurrentContext();
-
-        // Construct the top-level execution frame and scope for the main thread
-        context.prepareTopLevel(objectClass, topSelf);
+        // Set up main thread context
+        ThreadContext context = initMainThread();
 
         // Initialize all the core classes
         bootstrap();
@@ -1258,14 +1270,6 @@ public final class Ruby implements Constantizable {
 
         // set up thread statuses
         initThreadStatuses();
-
-        // Create an IR manager and a top-level IR scope and bind it to the top-level static-scope object
-        irManager = new IRManager(this, getInstanceConfig());
-        // FIXME: This registers itself into static scope as a side-effect.  Let's make this
-        // relationship handled either more directly or through a descriptive method
-        // FIXME: We need a failing test case for this since removing it did not regress tests
-        IRScope top = new IRScriptBody(irManager, "", context.getCurrentScope().getStaticScope());
-        top.allocateInterpreterContext(Collections.EMPTY_LIST);
 
         // Initialize the "dummy" class used as a marker
         dummyClass = new RubyClass(this, classClass);
@@ -1277,11 +1281,17 @@ public final class Ruby implements Constantizable {
         // Prepare LoadService and load path
         getLoadService().init(config.getLoadPaths());
 
+        // Provide some legacy libraries
+        loadService.provide("enumerator", "enumerator.rb");
+        loadService.provide("rational", "rational.rb");
+        loadService.provide("complex", "complex.rb");
+        loadService.provide("thread", "thread.rb");
+
         // out of base boot mode
         bootingCore = false;
 
         // Don't load boot-time libraries when debugging IR
-        if (!RubyInstanceConfig.DEBUG_PARSER) {
+        if (false && !RubyInstanceConfig.DEBUG_PARSER) {
             // initialize Java support
             initJavaSupport();
 
@@ -1295,12 +1305,6 @@ public final class Ruby implements Constantizable {
             if (!config.isDisableDidYouMean()) {
                 defineModule("DidYouMean");
             }
-
-            // Provide some legacy libraries
-            loadService.provide("enumerator", "enumerator.rb");
-            loadService.provide("rational", "rational.rb");
-            loadService.provide("complex", "complex.rb");
-            loadService.provide("thread", "thread.rb");
 
             // Load preludes
             initRubyPreludes();
@@ -1334,6 +1338,28 @@ public final class Ruby implements Constantizable {
         for (String scriptName : config.getRequiredLibraries()) {
             topSelf.callMethod(context, "require", RubyString.newString(this, scriptName));
         }
+    }
+
+    private ThreadContext initMainThread() {
+        // Set up the main thread in thread service
+        threadService = new ThreadService(this);
+        threadService.initMainThread();
+
+        // Get the main threadcontext (gets constructed for us)
+        final ThreadContext context = getCurrentContext();
+
+        // Construct the top-level execution frame and scope for the main thread
+        context.prepareTopLevel(objectClass, topSelf);
+
+        // Create an IR manager and a top-level IR scope and bind it to the top-level static-scope object
+        irManager = new IRManager(this, getInstanceConfig());
+        // FIXME: This registers itself into static scope as a side-effect.  Let's make this
+        // relationship handled either more directly or through a descriptive method
+        // FIXME: We need a failing test case for this since removing it did not regress tests
+        IRScope top = new IRScriptBody(irManager, "", context.getCurrentScope().getStaticScope());
+        top.allocateInterpreterContext(Collections.EMPTY_LIST);
+
+        return context;
     }
 
     public JavaSupport loadJavaSupport() {
@@ -5179,7 +5205,7 @@ public final class Ruby implements Constantizable {
 
     private final long startTime = System.currentTimeMillis();
 
-    final RubyInstanceConfig config;
+    RubyInstanceConfig config;
 
     private InputStream in;
     private PrintStream out;

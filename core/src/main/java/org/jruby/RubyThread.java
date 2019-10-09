@@ -163,6 +163,10 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     public static final int RUBY_MIN_THREAD_PRIORITY = -3;
     public static final int RUBY_MAX_THREAD_PRIORITY = 3;
 
+    public void setThreadImpl(NativeThread nativeThread) {
+        this.threadImpl = nativeThread;
+    }
+
     /** Thread statuses */
     public enum Status {
         RUN, SLEEP, ABORTING, DEAD;
