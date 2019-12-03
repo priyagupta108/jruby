@@ -233,20 +233,6 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
             return null;
         }
 
-        @Override // NOTE: likely won't be called
-        public RubyHashEntry internalDeleteEntry(final RubyHashEntry entry) {
-            final Map map = mapDelegate();
-            Object convertedKey = ((IRubyObject) entry.getKey()).toJava(Object.class);
-
-            if (map.containsKey(convertedKey)) {
-                map.remove(convertedKey);
-                setSize( map.size() );
-                return entry;
-            }
-
-            return NO_ENTRY;
-        }
-
         @Override
         public <T> void visitAll(ThreadContext context, VisitorWithState visitor, T state) {
             final Ruby runtime = getRuntime();
