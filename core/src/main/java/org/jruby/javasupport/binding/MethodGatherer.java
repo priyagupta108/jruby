@@ -161,9 +161,7 @@ public class MethodGatherer {
         return nameMethods;
     }
 
-    public static void eachAccessibleMethod(final Class<?> javaClass, Predicate<Method[]> classProcessor, Predicate<Method[]> interfaceProcessor) {
-        HashMap<String, List<Method>> nameMethods = new HashMap<>(32);
-
+    public static void eachAccessibleMethod(final Class<?> javaClass, Predicate<Map<String, List<Method>>> classProcessor, Predicate<Map<String, List<Method>>> interfaceProcessor) {
         // we scan all superclasses, but avoid adding superclass methods with
         // same name+signature as subclass methods (see JRUBY-3130)
         for ( Class<?> klass = javaClass; klass != null; klass = klass.getSuperclass() ) {
@@ -175,10 +173,10 @@ public class MethodGatherer {
                     // and replacing child methods with equivalent parent methods
                     PartitionedMethods filteredMethods = FILTERED_DECLARED_METHODS.get(klass);
 
-                    if (!classProcessor.test(filteredMethods.instanceMethods)) return;
+                    if (!classProcessor.test(filteredMethods.instanceMethodsByName)) return;
 
                     if (klass == javaClass) {
-                        if (!classProcessor.test(filteredMethods.staticMethods)) return;
+                        if (!classProcessor.test(filteredMethods.staticMethodsByName)) return;
                     }
                 }
                 catch (SecurityException e) { /* ignored */ }
@@ -192,7 +190,7 @@ public class MethodGatherer {
                     // parent methods
                     PartitionedMethods filteredMethods = FILTERED_METHODS.get(iface);
 
-                    if (!interfaceProcessor.test(filteredMethods.instanceMethods)) return;
+                    if (!interfaceProcessor.test(filteredMethods.instanceMethodsByName)) return;
                 }
                 catch (SecurityException e) { /* ignored */ }
             }
@@ -213,22 +211,21 @@ public class MethodGatherer {
 
     private static void addNewMethods(
             final HashMap<String, List<Method>> nameMethods,
-            final Method[] methods,
+            final Map<String, List<Method>> methods,
             final boolean removeDuplicate) {
 
-        Methods: for (Method method : methods) {
-            List<Method> childMethods = nameMethods.get(method.getName());
+        Methods: methods.forEach((name, methodList) -> methodList.forEach((method) -> {
+            List<Method> childMethods = nameMethods.get(name);
             if (childMethods == null) {
                 // first method of this name, add a collection for it
                 childMethods = new ArrayList<>(4);
                 childMethods.add(method);
-                nameMethods.put(method.getName(), childMethods);
-            }
-            else {
+                nameMethods.put(name, childMethods);
+            } else {
                 // we have seen other methods; check if we already have an equivalent one
                 for (int i = 0; i < childMethods.size(); i++) {
                     final Method current = childMethods.get(i);
-                    if ( methodsAreEquivalent(current, method) ) {
+                    if (methodsAreEquivalent(current, method)) {
                         if (removeDuplicate) {
                             // Replace the existing method, since the super call is more general
                             // and virtual dispatch will call the subclass impl anyway.
@@ -240,13 +237,13 @@ public class MethodGatherer {
                             // used for interface methods, which we want to add unconditionally
                             // but only if we need them
                         }
-                        continue Methods;
+                        return;
                     }
                 }
                 // no equivalent; add it
                 childMethods.add(method);
             }
-        }
+        }));
     }
 
     public static final ClassValue<Method[]> DECLARED_METHODS = new ClassValue<Method[]>() {
@@ -642,28 +639,29 @@ public class MethodGatherer {
     }
 
     private static class PartitionedMethods {
-        final Method[] instanceMethods;
-        final Method[] staticMethods;
+        final Map<String, List<Method>> instanceMethodsByName;
+        final Map<String, List<Method>> staticMethodsByName;
 
         PartitionedMethods(Method[] methods) {
-            List<Method> instanceMethods = Collections.EMPTY_LIST;
-            List<Method> staticMethods = Collections.EMPTY_LIST;
+            Map<String, List<Method>> instanceMethodsByName = Collections.EMPTY_MAP;
+            Map<String, List<Method>> staticMethodsByName = Collections.EMPTY_MAP;
 
             for (Method m : methods) {
                 int modifiers = m.getModifiers();
                 if (filterAccessible(m, modifiers)) {
+                    String name = m.getName();
                     if (Modifier.isStatic(modifiers)) {
-                        if (staticMethods == Collections.EMPTY_LIST) staticMethods = new ArrayList<>();
-                        staticMethods.add(m);
+                        if (staticMethodsByName == Collections.EMPTY_MAP) staticMethodsByName = new HashMap<>();
+                        staticMethodsByName.computeIfAbsent(name, (n) -> new ArrayList<>()).add(m);
                     } else {
-                        if (instanceMethods == Collections.EMPTY_LIST) instanceMethods = new ArrayList<>();
-                        instanceMethods.add(m);
+                        if (instanceMethodsByName == Collections.EMPTY_MAP) instanceMethodsByName = new HashMap<>();
+                        instanceMethodsByName.computeIfAbsent(name, (n) -> new ArrayList<>()).add(m);
                     }
                 }
             }
 
-            this.instanceMethods = instanceMethods.toArray(new Method[instanceMethods.size()]);
-            this.staticMethods = staticMethods.toArray(new Method[staticMethods.size()]);
+            this.instanceMethodsByName = instanceMethodsByName;
+            this.staticMethodsByName = staticMethodsByName;
         }
 
         private static boolean filterAccessible(Method method, int mod) {

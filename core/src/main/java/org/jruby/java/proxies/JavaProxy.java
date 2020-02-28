@@ -12,7 +12,9 @@ import java.text.MessageFormat;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Predicate;
 
 import com.headius.backport9.modules.Module;
@@ -384,17 +386,24 @@ public class JavaProxy extends RubyObject {
         }
     }
 
+    private static final Class[] EMPTY_CLASSES = new Class[0];
+
     @JRubyMethod
     public IRubyObject java_method(ThreadContext context, IRubyObject rubyName) {
         String name = rubyName.asJavaString();
 
-        return getRubyMethod(context, name);
+        return getRubyMethod(context, name, EMPTY_CLASSES);
     }
 
     @JRubyMethod
     public IRubyObject java_method(ThreadContext context, IRubyObject rubyName, IRubyObject argTypes) {
         String name = rubyName.asJavaString();
         RubyArray argTypesAry = argTypes.convertToArray();
+
+        if (argTypesAry.size() == 0) {
+            return getRubyMethod(context, name, EMPTY_CLASSES);
+        }
+
         Class[] argTypesClasses = (Class[]) argTypesAry.toArray(new Class[argTypesAry.size()]);
 
         return getRubyMethod(context, name, argTypesClasses);
@@ -448,15 +457,19 @@ public class JavaProxy extends RubyObject {
         Class<?> originalClass = getObject().getClass();
         Method[] holder = {null};
 
-        Predicate<Method[]> predicate = (classMethods) -> {
-            for (Method method : classMethods) {
-                if (method.getName().equals(name) && Arrays.equals(method.getParameterTypes(), argTypes)) {
-                    holder[0] = method;
-                    return false;
-                }
-            }
+        Predicate<Map<String, List<Method>>> predicate = (methods) -> {
+            List<Method> nameMethods = methods.get(name);
+            if (nameMethods == null) return true; // continue
 
-            return true;
+            Optional<Method> maybeMethod = nameMethods
+                    .stream()
+                    .filter((method) -> method.getName().equals(name) && Arrays.equals(method.getParameterTypes(), argTypes))
+                    .findFirst();
+
+            if (!maybeMethod.isPresent()) return true; // continue
+
+            holder[0] = maybeMethod.get();
+            return false;
         };
 
         MethodGatherer.eachAccessibleMethod(
