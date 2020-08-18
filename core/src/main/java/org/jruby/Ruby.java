@@ -3346,6 +3346,7 @@ public final class Ruby implements Constantizable {
         threadService.teardown();
         threadService = new ThreadService(this);
 
+        releaseClassLoader();
     }
 
     private int userTeardown(ThreadContext context) {
@@ -3397,8 +3398,11 @@ public final class Ruby implements Constantizable {
      */
     public void releaseClassLoader() {
         if (jrubyClassLoader != null) {
-            jrubyClassLoader.close();
-            //jrubyClassLoader = null;
+            try {
+                jrubyClassLoader.close();
+            } catch (IOException ioe) {
+                // ignore
+            }
         }
     }
 

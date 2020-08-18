@@ -56,4 +56,8 @@ public class ClassDefiningJRubyClassLoader extends URLClassLoader implements Cla
     public Class<?> defineClass(String name, byte[] bytes, ProtectionDomain domain) {
         return super.defineClass(name, bytes, 0, bytes.length, domain);
     }
+
+    public void addURL(URL url) {
+        super.addURL(url);
+    }
 }

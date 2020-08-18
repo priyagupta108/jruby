@@ -36,15 +36,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.management.ManagementFactory;
-import java.net.JarURLConnection;
 import java.net.URL;
-import java.net.URLConnection;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.jar.JarFile;
 
 import org.jruby.util.cli.Options;
 import org.jruby.util.log.Logger;
@@ -76,8 +70,12 @@ public class JRubyClassLoader extends ClassDefiningJRubyClassLoader {
 
     private final Map<String, URL> cachedJarPaths = new ConcurrentHashMap<>();
 
+    private ClassDefiningJRubyClassLoader parentLoader;
+
     public JRubyClassLoader(ClassLoader parent) {
-        super(parent);
+        super(new ClassDefiningJRubyClassLoader(parent));
+
+        parentLoader = (ClassDefiningJRubyClassLoader) getParent();
     }
 
     // Change visibility so others can see it
@@ -88,7 +86,10 @@ public class JRubyClassLoader extends ClassDefiningJRubyClassLoader {
         if (url.toString().contains( "!/" ) ||
             !(url.getProtocol().equals("file") || url.getProtocol().equals("http") || url.getProtocol().equals("https"))) {
             try {
-                File f = File.createTempFile("jruby", new File(url.getFile()).getName(), getTempDir());
+                File f = File.createTempFile("jruby", new File(url.getFile()).getName());
+
+                // set up the tempfile to delete on exit; we will close the JarFile in terminateJarIndexCacheEntries
+                f.deleteOnExit();
 
                 try (FileOutputStream fileOut = new FileOutputStream(f);
                      InputStream urlIn = url.openStream()) {
@@ -109,8 +110,10 @@ public class JRubyClassLoader extends ClassDefiningJRubyClassLoader {
             } catch (IOException e) {
                 throw new RuntimeException("BUG: we can not copy embedded jar to temp directory", e);
             }
+            super.addURL(url);
+        } else {
+            parentLoader.addURL(url);
         }
-        super.addURL(url);
     }
 
     private static synchronized File getTempDir() {
@@ -168,13 +171,13 @@ public class JRubyClassLoader extends ClassDefiningJRubyClassLoader {
      * Called when the parent runtime is torn down.
      */
     @Override
-    public void close() {
+    public void close() throws IOException {
         if (Options.JI_CLOSE_CLASSLOADER.load()) {
             // We no longer unconditionally close the classloader due to JDK issues with the open jar files it may be
             // holding references to.
             // See jruby/jruby#6218 and https://bugs.openjdk.java.net/browse/JDK-8246714
             try {
-                super.close();
+                parentLoader.close();
             } catch (Exception ex) {
                 LOG.debug(ex);
             }
@@ -187,35 +190,12 @@ public class JRubyClassLoader extends ClassDefiningJRubyClassLoader {
         }
         catch (Exception ex) { LOG.debug(ex); }
 
+        super.close();
         terminateJarIndexCacheEntries();
     }
 
     protected void terminateJarIndexCacheEntries() {
-        cachedJarPaths.forEach((path, url) -> {
-            // close the jar file associated with the connection, since this might be cached by JDK
-            try {
-                URLConnection connection = url.openConnection();
-
-                if (connection instanceof JarURLConnection) {
-                    JarFile jarFile = ((JarURLConnection) connection).getJarFile();
-
-                    try {
-                        jarFile.close();
-                    } catch (IOException ioe) {
-                        // ignore and proceed to delete the file
-                    }
-                }
-
-                // Remove reference from jar cache
-                JarResource.removeJarResource(path);
-
-                // Delete temp jar on disk
-                File jarFile = new File(path);
-                jarFile.delete();
-            } catch (Exception e) {
-                // keep trying to clean up other temp jars
-            }
-        });
+        cachedJarPaths.forEach((path, url) -> JarResource.removeJarResource(path));
     }
 
     @Deprecated
