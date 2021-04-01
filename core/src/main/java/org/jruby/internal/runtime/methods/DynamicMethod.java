@@ -225,6 +225,14 @@ public abstract class DynamicMethod {
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
         return call(context, self, klazz, name, new IRubyObject[] {arg0, arg1, arg2}, block);
     }
+    /** Arity 4, no block */
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
+        return call(context, self, klazz, name, arg0, arg1, arg2, Block.NULL_BLOCK);
+    }
+    /** Arity 4, with block; calls through IRubyObject[] path */
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block block) {
+        return call(context, self, klazz, name, new IRubyObject[] {arg0, arg1, arg2}, block);
+    }
 
     /**
      * Will call respond_to?/respond_to_missing? on object and name

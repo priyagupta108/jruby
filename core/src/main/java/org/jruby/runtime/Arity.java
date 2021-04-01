@@ -51,10 +51,12 @@ public final class Arity implements Serializable {
     public final static Arity ONE_ARGUMENT = newArity(1);
     public final static Arity TWO_ARGUMENTS = newArity(2);
     public final static Arity THREE_ARGUMENTS = newArity(3);
+    public final static Arity FOUR_ARGUMENTS = newArity(4);
     public final static Arity OPTIONAL = newArity(-1);
     public final static Arity ONE_REQUIRED = newArity(-2);
     public final static Arity TWO_REQUIRED = newArity(-3);
     public final static Arity THREE_REQUIRED = newArity(-4);
+    public final static Arity FOUR_REQUIRED = newArity(-5);
     public final static int UNLIMITED_ARGUMENTS = -1;
 
     private Arity(int value) {
