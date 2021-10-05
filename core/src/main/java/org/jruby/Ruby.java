@@ -72,6 +72,7 @@ import org.jruby.javasupport.JavaSupportImpl;
 import org.jruby.management.Caches;
 import org.jruby.management.InlineStats;
 import org.jruby.parser.StaticScope;
+import org.jruby.ractor.Ractor;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.invokedynamic.InvokeDynamicSupport;
@@ -202,8 +203,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.WeakHashMap;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Exchanger;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -376,6 +379,9 @@ public final class Ruby implements Constantizable {
         // Set up the main thread in thread service
         threadService.initMainThread();
 
+        // Create root Ractor
+        ractor = new Ractor(this, "main");
+
         // Get the main threadcontext (gets constructed for us)
         final ThreadContext context = getCurrentContext();
 
@@ -477,6 +483,7 @@ public final class Ruby implements Constantizable {
         TracePoint.createTracePointClass(this);
 
         warningModule = RubyWarnings.createWarningModule(this);
+        ractorClass = RubyRactor.createRactorClass(this);
 
         // Initialize exceptions
         initExceptions();
@@ -705,6 +712,32 @@ public final class Ruby implements Constantizable {
      */
     public static Ruby newInstance() {
         return newInstance(new RubyInstanceConfig());
+    }
+
+    public static Ractor newRactorInstance(Consumer<Ractor> runnable) {
+        BlockingQueue<Ractor> ractorExchange = new SynchronousQueue<>();
+
+        Thread ractorThread = new Thread(() -> {
+            Ruby runtime = newInstance(new RubyInstanceConfig());
+
+            try {
+                ractorExchange.put(runtime.ractor);
+            } catch (InterruptedException ie) {
+                Helpers.throwException(ie);
+            }
+
+            runnable.accept(runtime.ractor);
+        });
+
+        ractorThread.setDaemon(true);
+        ractorThread.start();
+
+        try {
+            return ractorExchange.take();
+        } catch (InterruptedException ie) {
+            Helpers.throwException(ie);
+            return null;
+        }
     }
 
     /**
@@ -5270,6 +5303,7 @@ public final class Ruby implements Constantizable {
 
     private final Invalidator checkpointInvalidator;
     private ThreadService threadService;
+    public final Ractor ractor;
 
     private final POSIX posix;
     private POSIX nativePosix;
@@ -5365,6 +5399,7 @@ public final class Ruby implements Constantizable {
     private final RubyClass queueClass;
     private final RubyClass closedQueueError;
     private final RubyClass sizedQueueClass;
+    private final RubyClass ractorClass;
 
     private RubyClass tmsStruct;
     private RubyClass passwdStruct;
