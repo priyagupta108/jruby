@@ -22,7 +22,7 @@ default_gems = [
     ['cmath', '1.0.0'],
     ['csv', '3.1.2'],
     ['e2mmap', '0.1.0'],
-    ['ffi', '1.15.1'],
+    ['ffi', '1.15.4'],
     ['fileutils', '1.4.1'],
     ['forwardable', '1.2.0'],
     ['ipaddr', '1.2.2'],
@@ -30,18 +30,18 @@ default_gems = [
     ['io-console', '0.5.9'],
     ['jar-dependencies', '0.4.1'],
     ['jruby-readline', '1.3.7'],
-    ['jruby-openssl', '0.10.5'],
+    ['jruby-openssl', '0.10.7'],
     ['json', '2.5.1'],
     ['logger', '1.3.0'],
     ['matrix', '0.3.0'],
     ['mutex_m', '0.1.0'],
-    ['ostruct', '0.3.3'],
+    ['ostruct', '0.1.0'],
     ['prime', '0.1.0'],
     ['psych', '3.3.2'],
     ['racc', '1.5.2'],
     ['rake-ant', '1.0.4'],
-    ['rdoc', '6.1.2'],
-    ['rexml', '3.1.9'],
+    ['rdoc', '6.1.2.1'],
+    ['rexml', '3.1.9.1'],
     ['rss', '0.2.7'],
     ['scanf', '1.0.0'],
     ['shell', '0.7'],
@@ -52,7 +52,7 @@ default_gems = [
 ]
 
 bundled_gems = [
-    ['did_you_mean', '1.2.1'],
+    ['did_you_mean', '1.3.0'],
     ['minitest', '5.11.3'],
     ['net-telnet', '0.1.1'],
     ['power_assert', '1.1.3'],
@@ -162,6 +162,15 @@ project 'JRuby Lib Setup' do
 
     log 'install gems unless already installed'
     ENV_JAVA['jars.skip'] = 'true'
+
+    # bin location for global binstubs
+    global_bin = File.join( jruby_home, "bin" )
+
+    # force Ruby command to "jruby" for the generated Windows bat files since we install using 9.1.17.0 jar file
+    Gem.singleton_class.send(:define_method, :ruby) do
+      File.join(global_bin, "jruby#{RbConfig::CONFIG['EXEEXT']}")
+    end
+
     ctx.project.artifacts.select do |a|
       a.group_id == 'rubygems' || a.group_id == 'org.jruby.gems'
     end.each do |a|
@@ -273,9 +282,13 @@ project 'JRuby Lib Setup' do
     f = File.join( stdlib_dir, 'rubygems_plugin.rb' )
     File.delete( f ) if File.exists?( f )
 
-    # fix file permissions of installed gems
-    ( Dir[ File.join( jruby_gems, '**/*' ) ] + Dir[ File.join( jruby_gems, '**/.*' ) ] ).each do |f|
-      File.chmod( 0644, f ) rescue nil if File.file?( f )
+    # axiom-types appears to be a dead project but a transitive dep we still
+    # have.  It contains unreadable files which messes up some upstream
+    # maintainers like OpenBSD (see #1989).
+    hack = File.join jruby_gems, 'gems', 'axiom-types-*'
+    (Dir[File.join(hack, '**/*')] + Dir[File.join(hack, '**/.*' )]).each do |f|
+      puts "F: #{f}"
+      FileUtils.chmod 'u+rw,go+r' rescue nil if File.file?(f)
     end
   end
 

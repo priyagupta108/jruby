@@ -763,6 +763,15 @@ public final class ThreadContext {
         if ((callNumber++ & CALL_POLL_COUNT) == 0) pollThreadEvents();
     }
 
+    /**
+     * Poll for thread events that should be fired before a blocking call.
+     *
+     * See vm_check_ints_blocking and RUBY_VM_CHECK_INTS_BLOCKING in CRuby.
+     */
+    public void blockingThreadPoll() {
+        thread.blockingThreadPoll(this);
+    }
+
     public static void callThreadPoll(ThreadContext context) {
         if ((context.callNumber++ & CALL_POLL_COUNT) == 0) context.pollThreadEvents();
     }
@@ -916,7 +925,7 @@ public final class ThreadContext {
     public static String createRawBacktraceStringFromThrowable(final Throwable ex, final boolean color) {
         return WALKER.walk(ex.getStackTrace(), stream ->
             TraceType.printBacktraceJRuby(null,
-                    new BacktraceData(stream, Stream.empty(), true, false, false).getBacktraceWithoutRuby(),
+                    new BacktraceData(stream, Stream.empty(), true, true, false, false).getBacktraceWithoutRuby(),
                     ex.getClass().getName(),
                     ex.getLocalizedMessage(),
                     color));

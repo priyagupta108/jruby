@@ -51,6 +51,12 @@ import org.jruby.ir.operands.Splat;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.persistence.IRReader;
 import org.jruby.ir.persistence.IRReaderStream;
+import org.jruby.java.invokers.InstanceMethodInvoker;
+import org.jruby.java.invokers.RubyToJavaInvoker;
+import org.jruby.java.proxies.JavaProxy;
+import org.jruby.javasupport.JavaMethod;
+import org.jruby.javasupport.proxy.JavaProxyClass;
+import org.jruby.javasupport.proxy.JavaProxyMethod;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Binding;
@@ -899,6 +905,22 @@ public class IRRuntimeHelpers {
         findInstanceMethodContainer(context, currDynScope, self).alias_method(context, newName, oldName);
     }
 
+    /**
+     * Find the base class or "cbase" used for various class-level operations.
+     *
+     * This should be equivalent to "cbase" in CRuby, as retrieved by vm_get_cbase.
+     *
+     * See {@link org.jruby.ir.instructions.GetClassVarContainerModuleInstr} and {@link org.jruby.RubyKernel#autoload(ThreadContext, IRubyObject, IRubyObject, IRubyObject)}
+     * for example usage.
+     *
+     * @param context the current context
+     * @param self the current self object
+     * @return the instance method definition target, or the "cbase" for other purposes
+     */
+    public static RubyModule getCurrentClassBase(ThreadContext context, IRubyObject self) {
+        return getModuleFromScope(context, context.getCurrentStaticScope(), self);
+    }
+
     public static RubyModule getModuleFromScope(ThreadContext context, StaticScope scope, IRubyObject arg) {
         Ruby runtime = context.runtime;
         RubyModule rubyClass = scope.getModule();
@@ -1178,11 +1200,52 @@ public class IRRuntimeHelpers {
         CacheEntry entry = getSuperMethodEntry(id, definingModule);
         DynamicMethod method = entry.method;
 
+        if (method instanceof InstanceMethodInvoker && self instanceof JavaProxy) {
+            return javaProxySuper(
+                    context,
+                    (JavaProxy) self,
+                    id,
+                    (RubyClass) definingModule,
+                    args,
+                    (InstanceMethodInvoker) method);
+        }
+
         if (method.isUndefined()) {
             return Helpers.callMethodMissing(context, self, method.getVisibility(), id, CallType.SUPER, args, block);
         }
 
         return method.call(context, self, entry.sourceModule, id, args, block);
+    }
+
+    /**
+     * Perform a super invocation against a Java proxy, using proxy logic to locate and invoke the appropriate shim
+     * method.
+     *
+     * This duplicates some logic from InstanceMethodInvoker.call and JavaMethod.tryProxyInvocation in order to properly
+     * retrieve the superclass method from the caller's point of view. See GH-6718.
+     *
+     * @param context the current context
+     * @param self the proxy wrapper
+     * @param id the method name
+     * @param definingModule the module in which the calling method is defined
+     * @param args arguments to the call
+     * @param superMethod the invoker for the super method found using using Ruby super logic
+     * @return the result of invoking the super method via a shim method
+     */
+    private static IRubyObject javaProxySuper(ThreadContext context, JavaProxy self, String id, RubyClass definingModule, IRubyObject[] args, InstanceMethodInvoker superMethod) {
+        Object javaInvokee = self.getObject();
+
+        JavaMethod javaMethod = (JavaMethod) superMethod.findCallable(self, id, args, args.length);
+
+        // self is a Java subclass, need to do a bit more logic to dispatch the right method
+        JavaProxyClass jpc = JavaProxyClass.getProxyClass(context.runtime, definingModule);
+        JavaProxyMethod jpm;
+        Object[] newArgs = RubyToJavaInvoker.convertArguments(javaMethod, args);
+        if ((jpm = jpc.getMethod(id, javaMethod.getParameterTypes())) != null && jpm.hasSuperImplementation()) {
+            return javaMethod.invokeDirectSuperWithExceptionHandling(context, jpm.getSuperMethod(), javaInvokee, newArgs);
+        } else {
+            return javaMethod.invokeDirectWithExceptionHandling(context, javaMethod.getValue(), javaInvokee, newArgs);
+        }
     }
 
     @Interp
@@ -1274,8 +1337,8 @@ public class IRRuntimeHelpers {
     private static RubyClass searchNormalSuperclass(RubyModule klazz) {
         // Unwrap refinements, since super should always dispatch back to the refined class
         if (klazz.isIncluded()
-                && klazz.getNonIncludedClass().isRefinement()) {
-            klazz = klazz.getNonIncludedClass();
+                && klazz.getOrigin().isRefinement()) {
+            klazz = klazz.getOrigin();
         }
         klazz = klazz.getMethodLocation();
         return klazz.getSuperClass();
@@ -1633,7 +1696,7 @@ public class IRRuntimeHelpers {
         RubyModule rubyClass = findInstanceMethodContainer(context, currDynScope, self);
 
         Visibility currVisibility = context.getCurrentVisibility();
-        Visibility newVisibility = Helpers.performNormalMethodChecksAndDetermineVisibility(runtime, rubyClass, methodName, currVisibility, true);
+        Visibility newVisibility = Helpers.performNormalMethodChecksAndDetermineVisibility(runtime, rubyClass, methodName, currVisibility);
 
         if (method.maybeUsingRefinements()) method.getStaticScope().captureParentRefinements(context);
 
@@ -1657,7 +1720,7 @@ public class IRRuntimeHelpers {
         RubyModule clazz = findInstanceMethodContainer(context, currDynScope, self);
 
         Visibility currVisibility = context.getCurrentVisibility();
-        Visibility newVisibility = Helpers.performNormalMethodChecksAndDetermineVisibility(runtime, clazz, methodName, currVisibility, true);
+        Visibility newVisibility = Helpers.performNormalMethodChecksAndDetermineVisibility(runtime, clazz, methodName, currVisibility);
 
         if (maybeRefined) scope.captureParentRefinements(context);
 
@@ -1679,7 +1742,7 @@ public class IRRuntimeHelpers {
         RubyModule clazz = findInstanceMethodContainer(context, currDynScope, self);
 
         Visibility currVisibility = context.getCurrentVisibility();
-        Visibility newVisibility = Helpers.performNormalMethodChecksAndDetermineVisibility(runtime, clazz, methodName, currVisibility, true);
+        Visibility newVisibility = Helpers.performNormalMethodChecksAndDetermineVisibility(runtime, clazz, methodName, currVisibility);
 
         if (maybeRefined) scope.captureParentRefinements(context);
 
@@ -2287,8 +2350,8 @@ public class IRRuntimeHelpers {
     }
 
     @JIT
-    public static RubyRational newRationalRaw(ThreadContext context, IRubyObject num, IRubyObject den) {
-        return RubyRational.newRationalRaw(context.runtime, num, den);
+    public static RubyRational newRationalCanonicalize(ThreadContext context, IRubyObject num, IRubyObject den) {
+        return (RubyRational) RubyRational.newRationalCanonicalize(context, num, den);
     }
 
     @JIT

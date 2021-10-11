@@ -1,4 +1,5 @@
 require 'java'
+require 'jruby'
 require 'rbconfig'
 require 'test/unit'
 require 'test/jruby/test_helper'
@@ -932,21 +933,21 @@ class TestHigherJavasupport < Test::Unit::TestCase
   end
 
   def test_open_reflected_field
-    java_fields = java.lang.Class.forName('java_integration.fixtures.JavaFields')
+    java_fields = java.lang.Class.forName('org.jruby.RubyBoolean')
     begin
-      java_fields.field('privateIntField')
+      java_fields.field('hashCode')
       fail('value field is not public!')
     rescue java.lang.NoSuchFieldException => e
       # in JRuby 9.2 (JavaClass) used to map this to NameError
       assert e
     end
-    value_field = java_fields.declared_field('privateIntField')
+    value_field = java_fields.declared_field('hashCode')
     assert_equal false, value_field.static?
     assert_equal false, value_field.public?
     assert_equal true, value_field.final?
     assert_equal false, value_field.accessible?
     value_field.accessible = true
-    assert_equal 1, value_field.value( java_fields.constructor.new_instance )
+    assert_equal JRuby.ref(true).hashCode, value_field.value( JRuby.ref(true) )
     assert_equal 'int', value_field.value_type
   end
 
@@ -1079,31 +1080,24 @@ class TestHigherJavasupport < Test::Unit::TestCase
   end if ALLOW_UPPERCASE_PACKAGE_NAMES
 
   def test_package_class
+    # Java::JavaPackage is now not directly accessible as a normal constant but it still exists.
+    # We can still test by asking for the name of the class
+    java_package = "Java::JavaPackage"
     assert org.jruby.class.is_a?(Class)
-    assert_equal org.jruby.class, Java::JavaPackage
-    assert_equal Java::OrgJrubyJavasupport.class, Java::JavaPackage
+    assert_equal org.jruby.class.name, java_package
+    assert_equal Java::OrgJrubyJavasupport.class.name, java_package
 
     assert org.jruby.singleton_class.is_a?(Class)
     assert_not_equal org.jruby.singleton_class, org.jruby.class
     assert_not_equal org.jruby.singleton_class, org.jruby.javasupport.singleton_class
-
-    # really to avoid unexpected outcomes for Class instances :
-
-    assert Java::JavaPackage.is_a?(Module)
-    # can not make it a Module instance "only", really
-    if Java::JavaPackage.is_a?(Class)
-      assert_equal Module, Java::JavaPackage.superclass
-    end
   end
 
   def test_package_name_colliding_with_name_method
     assert_equal 'Java::OrgJrubyJavasupport', org.jruby.javasupport.name
     assert_equal true, org.jruby.javasupport.respond_to?(:name)
-    assert org.jruby.javasupport.test.is_a?(Java::JavaPackage)
 
     assert_equal 'Java::OrgJrubyJavasupportTest', org.jruby.javasupport.test.name
     # we can use :: to access the name package :
-    assert Java::OrgJrubyJavasupportTestName.is_a?(Java::JavaPackage)
     assert Java::OrgJrubyJavasupportTestName::Sample
   end
 
@@ -1461,12 +1455,10 @@ CLASSDEF
 
   # JRUBY-781
   def test_that_classes_beginning_with_small_letter_can_be_referenced
-    assert_equal Java::JavaPackage, org.jruby.test.smallLetterClazz.class
     assert org.jruby.test.smallLetterClazz.is_a?(Module)
     assert ! org.jruby.test.smallLetterClazz.is_a?(Class)
     
     assert_equal Class, org.jruby.test.smallLetterClass.class
-    assert ! org.jruby.test.smallLetterClass.is_a?(Java::JavaPackage)
   end
 
   Module.send :remove_method, :attr

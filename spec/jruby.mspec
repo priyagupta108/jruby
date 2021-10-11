@@ -11,7 +11,7 @@ load "#{__dir__}/ruby/default.mspec"
 # runs we change our noop version of GC.start to requesting we actually
 # perform a GC on the JVM.
 module GC
-  def start
+  def start(full_mark: true, immediate_sweep: true)
     java.lang.System.gc
   end
   module_function :start
@@ -26,6 +26,9 @@ TAGS_DIR = File.join(File.dirname(__FILE__), 'tags') unless defined?(TAGS_DIR)
 
 class MSpecScript
   set :prefix, 'spec/ruby'
+
+  # enable MRI-like backtraces for specs that expect that output
+  set :flags, ['-Xbacktrace.style=mri']
 
   jruby = RbConfig::CONFIG['ruby_install_name'] + RbConfig::CONFIG['EXEEXT']
   jruby = File.expand_path("../../bin/#{jruby}", __FILE__)
@@ -92,19 +95,21 @@ class MSpecScript
 
   get(:ci_xtags) << HOST_OS
 
+  instance_config = JRuby.runtime.instance_config
+
   if WINDOWS
     # Some specs on Windows will fail in we launch JRuby via
     # ruby_exe() in-process (see core/argf/gets_spec.rb)
-    JRuby.runtime.instance_config.run_ruby_in_process = false
+    instance_config.run_ruby_in_process = false
 
     # exclude specs tagged with 'windows' keyword
     get(:ci_xtags) << 'windows'
   end
 
-  # If running specs with jit threshold = 1 or force (AOT) compile, additional tags
-  if JRuby.runtime.instance_config.compile_mode.to_s == "FORCE" ||
-      JRuby.runtime.instance_config.jit_threshold == 1
-    get(:ci_xtags) << 'compiler'
+  # If running specs with jit threshold = 0 or force (AOT) compile, additional tags
+  if instance_config.compile_mode.to_s == "FORCE" ||
+      instance_config.jit_threshold == 0
+    get(:ci_xtags) << 'jit'
   end
 
   # This set of files is run by mspec ci
