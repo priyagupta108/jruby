@@ -318,7 +318,7 @@ public abstract class CachingCallSite extends CallSite {
         return entry;
     }
 
-    private IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType, Block block,
+    protected IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType, Block block,
         IRubyObject[] args, ThreadContext context, IRubyObject self) {
         CacheEntry entry = selfType.searchWithCache(methodName);
         DynamicMethod method = entry.method;
@@ -329,7 +329,7 @@ public abstract class CachingCallSite extends CallSite {
         return method.call(context, self, entry.sourceModule, methodName, args, block);
     }
 
-    private IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType,
+    protected IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType,
         IRubyObject[] args, ThreadContext context, IRubyObject self) {
         CacheEntry entry = selfType.searchWithCache(methodName);
         DynamicMethod method = entry.method;
@@ -340,7 +340,7 @@ public abstract class CachingCallSite extends CallSite {
         return method.call(context, self, entry.sourceModule, methodName, args);
     }
 
-    private IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType,
+    protected IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType,
         ThreadContext context, IRubyObject self) {
         CacheEntry entry = selfType.searchWithCache(methodName);
         DynamicMethod method = entry.method;
@@ -351,7 +351,7 @@ public abstract class CachingCallSite extends CallSite {
         return method.call(context, self, entry.sourceModule, methodName);
     }
 
-    private IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType, Block block,
+    protected IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType, Block block,
         ThreadContext context, IRubyObject self) {
         CacheEntry entry = selfType.searchWithCache(methodName);
         DynamicMethod method = entry.method;
@@ -372,7 +372,7 @@ public abstract class CachingCallSite extends CallSite {
         return method.call(context, self, entry.sourceModule, methodName, arg);
     }
 
-    private IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType, Block block,
+    protected IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType, Block block,
         ThreadContext context, IRubyObject self, IRubyObject arg) {
         CacheEntry entry = selfType.searchWithCache(methodName);
         DynamicMethod method = entry.method;
@@ -393,7 +393,7 @@ public abstract class CachingCallSite extends CallSite {
         return method.call(context, self, entry.sourceModule, methodName, arg1, arg2);
     }
 
-    private IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType, Block block,
+    protected IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType, Block block,
         ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2) {
         CacheEntry entry = selfType.searchWithCache(methodName);
         DynamicMethod method = entry.method;
@@ -404,7 +404,7 @@ public abstract class CachingCallSite extends CallSite {
         return method.call(context, self, entry.sourceModule, methodName, arg1, arg2, block);
     }
 
-    private IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType,
+    protected IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType,
         ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
         CacheEntry entry = selfType.searchWithCache(methodName);
         DynamicMethod method = entry.method;
@@ -415,7 +415,7 @@ public abstract class CachingCallSite extends CallSite {
         return method.call(context, self, entry.sourceModule, methodName, arg1, arg2, arg3);
     }
 
-    private IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType, Block block,
+    protected IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType, Block block,
         ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
         CacheEntry entry = selfType.searchWithCache(methodName);
         DynamicMethod method = entry.method;

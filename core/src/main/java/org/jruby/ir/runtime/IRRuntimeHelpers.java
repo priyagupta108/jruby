@@ -1328,7 +1328,7 @@ public class IRRuntimeHelpers {
      * @param superMethod the invoker for the super method found using using Ruby super logic
      * @return the result of invoking the super method via a shim method
      */
-    private static IRubyObject javaProxySuper(ThreadContext context, JavaProxy self, String id, RubyClass definingModule, IRubyObject[] args, InstanceMethodInvoker superMethod) {
+    public static IRubyObject javaProxySuper(ThreadContext context, JavaProxy self, String id, RubyClass definingModule, IRubyObject[] args, InstanceMethodInvoker superMethod) {
         Object javaInvokee = self.getObject();
 
         JavaMethod javaMethod = (JavaMethod) superMethod.findCallable(self, id, args, args.length);
@@ -1358,7 +1358,7 @@ public class IRRuntimeHelpers {
         }
     }
 
-    private static CacheEntry getSuperMethodEntry(String id, RubyModule definingModule) {
+    public static CacheEntry getSuperMethodEntry(String id, RubyModule definingModule) {
         RubyClass superClass = definingModule.getMethodLocation().getSuperClass();
         return superClass != null ? superClass.searchWithCache(id) : CacheEntry.NULL_CACHE;
     }
@@ -1435,7 +1435,7 @@ public class IRRuntimeHelpers {
     }
 
     // MRI: vm_search_normal_superclass
-    private static RubyClass searchNormalSuperclass(RubyModule klazz) {
+    public static RubyClass searchNormalSuperclass(RubyModule klazz) {
         // Unwrap refinements, since super should always dispatch back to the refined class
         if (klazz.isIncluded()
                 && klazz.getOrigin().isRefinement()) {

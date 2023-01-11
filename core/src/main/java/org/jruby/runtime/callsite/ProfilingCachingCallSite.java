@@ -229,7 +229,7 @@ public class ProfilingCachingCallSite extends CachingCallSite {
         }
     }
 
-    private IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType, Block block,
+    protected IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType, Block block,
                                      IRubyObject[] args, ThreadContext context, IRubyObject self) {
         CacheEntry entry = selfType.searchWithCache(methodName);
         DynamicMethod method = entry.method;
@@ -241,7 +241,7 @@ public class ProfilingCachingCallSite extends CachingCallSite {
         }
     }
 
-    private IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType,
+    protected IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType,
                                      IRubyObject[] args, ThreadContext context, IRubyObject self) {
         CacheEntry entry = selfType.searchWithCache(methodName);
         DynamicMethod method = entry.method;
@@ -253,7 +253,7 @@ public class ProfilingCachingCallSite extends CachingCallSite {
         }
     }
 
-    private IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType,
+    protected IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType,
                                      ThreadContext context, IRubyObject self) {
         CacheEntry entry = selfType.searchWithCache(methodName);
         DynamicMethod method = entry.method;
@@ -265,7 +265,7 @@ public class ProfilingCachingCallSite extends CachingCallSite {
         }
     }
 
-    private IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType, Block block,
+    protected IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType, Block block,
                                      ThreadContext context, IRubyObject self) {
         CacheEntry entry = selfType.searchWithCache(methodName);
         DynamicMethod method = entry.method;
@@ -288,7 +288,7 @@ public class ProfilingCachingCallSite extends CachingCallSite {
         }
     }
 
-    private IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType, Block block,
+    protected IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType, Block block,
                                      ThreadContext context, IRubyObject self, IRubyObject arg) {
         CacheEntry entry = selfType.searchWithCache(methodName);
         DynamicMethod method = entry.method;
@@ -311,7 +311,7 @@ public class ProfilingCachingCallSite extends CachingCallSite {
         }
     }
 
-    private IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType, Block block,
+    protected IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType, Block block,
                                      ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2) {
         CacheEntry entry = selfType.searchWithCache(methodName);
         DynamicMethod method = entry.method;
@@ -323,7 +323,7 @@ public class ProfilingCachingCallSite extends CachingCallSite {
         }
     }
 
-    private IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType,
+    protected IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType,
                                      ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2,
                                      IRubyObject arg3) {
         CacheEntry entry = selfType.searchWithCache(methodName);
@@ -336,7 +336,7 @@ public class ProfilingCachingCallSite extends CachingCallSite {
         }
     }
 
-    private IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType, Block block,
+    protected IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType, Block block,
                                      ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2,
                                      IRubyObject arg3) {
         CacheEntry entry = selfType.searchWithCache(methodName);

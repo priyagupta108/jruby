@@ -3,6 +3,7 @@ package org.jruby.ir.targets.indy;
 import org.jruby.RubyClass;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.runtime.CallType;
+import org.jruby.runtime.callsite.CacheEntry;
 import org.jruby.util.JavaNameMangler;
 
 import java.lang.invoke.CallSite;
@@ -17,6 +18,8 @@ import static org.jruby.util.CodegenUtils.sig;
 public abstract class ResolvedSuperInvokeSite extends SelfInvokeSite {
     protected final String superName;
     protected final boolean[] splatMap;
+
+    protected CacheEntry entry = CacheEntry.NULL_CACHE;
 
     public ResolvedSuperInvokeSite(MethodType type, String superName, String splatmapString, String file, int line) {
         super(type, superName, CallType.SUPER, file, line);
