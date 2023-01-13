@@ -157,8 +157,8 @@ public class NormalValueCompiler implements ValueCompiler {
     public void pushSymbolProc(ByteList bytes) {
         cacheValuePermanentlyLoadContext("symbolProc", RubyProc.class, null, () -> {
             compiler.loadContext();
-            pushByteList(bytes);
-            compiler.invokeIRHelper("newSymbolProc", sig(RubyProc.class, ThreadContext.class, ByteList.class));
+            pushSymbol(bytes);
+            compiler.invokeIRHelper("newSymbolProc", sig(RubyProc.class, ThreadContext.class, RubySymbol.class));
         });
     }
 
