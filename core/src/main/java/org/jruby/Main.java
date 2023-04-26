@@ -56,12 +56,15 @@ import java.io.*;
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.Properties;
+
+import org.eclipse.openj9.criu.CRIUSupport;
 
 /**
  * Class used to launch the interpreter.
@@ -193,6 +196,31 @@ public class Main {
             main = new Main(DripMain.DRIP_CONFIG, true);
         } else {
             main = new Main(true);
+        }
+
+        if (System.getProperty("jruby.checkpoint.path") != null) {
+           // delete property since it is unknown to the rest of JRuby
+           String path = System.getProperty("jruby.checkpoint.path");
+           System.clearProperty("jruby.checkpoint.path");
+
+            // run a bunch of JRuby stuff and then checkpoint
+            if (CRIUSupport.isCRIUSupportEnabled()) {
+               System.out.print("Warming up JRuby...");
+                for (int i = 0; i < 100; i++) {
+                    Ruby.newInstance();
+                }
+               System.out.println(" done! Saving checkpoint.");
+
+                new CRIUSupport(Paths.get(path))
+                        .setLeaveRunning(false)
+                        .setShellJob(true)
+                        .setFileLocks(true)
+                        .setLogLevel(4)
+                        .setLogFile("logs")
+                        .checkpointJVM();
+            } else {
+                System.err.println("CRIU is not enabled: " + CRIUSupport.getErrorMessage());
+            }
         }
 
         try {

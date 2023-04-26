@@ -535,6 +535,8 @@ do
         --environment) print_environment_log=true ;;
         # warn but ignore
         --1.8|--1.9|--2.0) echo "warning: $1 ignored" 1>&2 ;;
+       --checkpoint) append java_args -Djruby.checkpoint.path=./jruby_criu -XX:+EnableCRIUSupport ;;
+       --restore) exec criu restore -D ./jruby_criu --shell-job -v4 --log-file=restore.log ;;
         # Abort processing on the double dash
         --) break ;;
         # Other opts go to ruby
