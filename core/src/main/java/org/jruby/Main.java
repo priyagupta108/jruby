@@ -38,6 +38,9 @@
 
 package org.jruby;
 
+import jdk.crac.CheckpointException;
+import jdk.crac.Core;
+import jdk.crac.RestoreException;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
@@ -193,6 +196,27 @@ public class Main {
             main = new Main(DripMain.DRIP_CONFIG, true);
         } else {
             main = new Main(true);
+        }
+
+        if (System.getProperty("jruby.checkpoint.path") != null) {
+            // delete property since it is unknown to the rest of JRuby
+            String path = System.getProperty("jruby.checkpoint.path");
+            System.clearProperty("jruby.checkpoint.path");
+
+            // run a bunch of JRuby stuff and then checkpoint
+            System.out.print("Warming up JRuby...");
+            for (int i = 0; i < 1000; i++) {
+                Ruby.newInstance().tearDown();
+            }
+            System.out.println(" done! Saving checkpoint.");
+
+            try {
+                System.gc();
+                System.gc();
+                Core.checkpointRestore();
+            } catch (CheckpointException | RestoreException t) {
+                throw new RuntimeException(t);
+            }
         }
 
         try {
