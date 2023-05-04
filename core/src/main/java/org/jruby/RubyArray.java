@@ -41,16 +41,18 @@ package org.jruby;
 import java.io.IOException;
 import java.lang.reflect.Array;
 import java.math.BigInteger;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.RandomAccess;
+import java.util.Set;
 import java.util.Stack;
 
 import org.jcodings.specific.USASCIIEncoding;
@@ -59,7 +61,6 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.exceptions.RangeError;
 import org.jruby.java.util.ArrayUtils;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Arity;
@@ -901,16 +902,16 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     /** rb_ary_elt
      *
      */
-    private final IRubyObject elt(long offset) {
+    private T elt(long offset) {
         if (offset < 0 || offset >= realLength) {
-            return metaClass.runtime.getNil();
+            return (T) metaClass.runtime.getNil();
         }
         return eltOk(offset);
     }
 
     public T eltOk(long offset) {
         try {
-            return (T) eltInternal((int)offset);
+            return eltInternal((int)offset);
         } catch (ArrayIndexOutOfBoundsException ex) {
             throw concurrentModification(getRuntime(), ex);
         }
@@ -3620,19 +3621,24 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         return op_times(context, times);
     }
 
-    /** ary_make_hash
-     *
-     */
-    private RubyHash makeHash(Ruby runtime) {
-        return makeHash(new RubyHash(runtime, Math.min(realLength, 128), false));
+    private Set<T> makeSet() {
+        return makeSet(new HashSet<>(Math.min(realLength, 128)));
     }
 
-    private RubyHash makeHash(RubyHash hash) {
+    private static class EqlHashSet<T> extends HashSet<T> {
+
+    }
+
+    private Set<T> makeOrderedSet() {
+        return makeSet(new LinkedHashSet<>(Math.min(realLength, 128)));
+    }
+
+    private Set<T> makeSet(Set<T> set) {
         for (int i = 0; i < realLength; i++) {
             IRubyObject v = elt(i);
-            hash.internalPutIfNoKey(v, v);
+            set.add((T) v);
         }
-        return hash;
+        return set;
     }
 
     private RubyHash makeHash(ThreadContext context, Block block) {
@@ -3656,6 +3662,13 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         }
     }
 
+    private void setValuesFrom(Set<T> set) {
+        int i = 0;
+        for (Iterator<T> iter = set.iterator(); iter.hasNext(); i++) {
+            this.eltInternalSet(i, iter.next());
+        }
+    }
+
     private void clearValues(final int from, final int to) {
         try {
             Helpers.fillNil(values, begin + from, begin + to, metaClass.runtime);
@@ -3668,14 +3681,14 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
      *
      */
     public IRubyObject uniq_bang(ThreadContext context) {
-        final RubyHash hash = makeHash(context.runtime);
-        final int newLength = hash.size;
+        final Set<T> set = makeOrderedSet();
+        final int newLength = set.size();
         if (realLength == newLength) return context.nil;
 
         modify(); // in case array isShared
         unpack();
 
-        setValuesFrom(context, hash);
+        setValuesFrom(set);
         clearValues(newLength, realLength);
         realLength = newLength;
 
@@ -3713,12 +3726,12 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
      */
     public IRubyObject uniq(ThreadContext context) {
         Ruby runtime = context.runtime;
-        RubyHash hash = makeHash(runtime);
-        final int newLength = hash.size;
+        Set<T> set = makeOrderedSet();
+        final int newLength = set.size();
         if (realLength == newLength) return makeShared();
 
         RubyArray result = newBlankArrayInternal(runtime, runtime.getArray(), newLength);
-        result.setValuesFrom(context, hash);
+        result.setValuesFrom(set);
         result.realLength = newLength;
         return result;
     }
@@ -3753,10 +3766,10 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         RubyArray res = newBlankArrayInternal(runtime, len);
 
         int index = 0;
-        RubyHash hash = other.convertToArray().makeHash(runtime);
+        Set<T> set = other.convertToArray().makeSet();
         for (int i = 0; i < len; i++) {
             IRubyObject val = eltOk(i);
-            if (hash.fastARef(val) == null) res.storeInternal(index++, val);
+            if (!set.contains(val)) res.storeInternal(index++, val);
         }
 
         // if index is 1 and we made a size 2 array, repack
@@ -3778,14 +3791,14 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     public IRubyObject difference(ThreadContext context, IRubyObject[] args) {
         BitSet isHash = new BitSet(args.length);
         RubyArray[] arrays = new RubyArray[args.length];
-        RubyHash[] hashes = new RubyHash[args.length];
+        Set<T>[] sets = new Set[args.length];
 
         RubyArray diff = newArray(context.runtime);
 
         for (int i = 0; i < args.length; i++) {
             arrays[i] = args[i].convertToArray();
             isHash.set(i, (realLength > ARRAY_DEFAULT_SIZE && arrays[i].realLength > ARRAY_DEFAULT_SIZE));
-            if (isHash.get(i)) hashes[i] = arrays[i].makeHash(context.runtime);
+            if (isHash.get(i)) sets[i] = arrays[i].makeSet();
         }
 
         for (int i = 0; i < realLength; i++) {
@@ -3793,7 +3806,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
             int j;
             for (j = 0; j < args.length; j++) {
                 if (isHash.get(j)) {
-                    if (hashes[j].fastARef(elt) != null) break;
+                    if (sets[j].contains(elt)) break;
                 } else {
                     if (arrays[j].includesByEql(context, elt)) break;
                 }
@@ -3841,10 +3854,10 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
             shorter = ary2;
         }
 
-        RubyHash hash = shorter.makeHash(context.runtime);
+        Set<T> set = shorter.makeSet();
         for (int i = 0; i < longer.realLength; i++) {
             IRubyObject val = longer.eltOk(i);
-            if (hash.fastARef(val) != null) return context.tru;
+            if (set.contains(val)) return context.tru;
         }
 
         return context.fals;
@@ -3873,10 +3886,10 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         }
 
         int index = 0;
-        RubyHash hash = ary2.makeHash(runtime);
+        Set<T> set = ary2.makeSet();
         for (int i = 0; i < len; i++) {
             IRubyObject val = elt(i);
-            if (hash.fastDelete(val)) res.storeInternal(index++, val);
+            if (set.remove(val)) res.storeInternal(index++, val);
         }
 
         // if index is 1 and we made a size 2 array, repack
@@ -3902,10 +3915,10 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         int maxSize = realLength + ary2.realLength;
         if (maxSize == 0) return newEmptyArray(runtime);
 
-        RubyHash set = ary2.makeHash(makeHash(runtime));
-        RubyArray res = newBlankArrayInternal(runtime, set.size);
-        res.setValuesFrom(runtime.getCurrentContext(), set);
-        res.realLength = set.size;
+        Set<T> set = ary2.makeSet(makeOrderedSet());
+        RubyArray res = newBlankArrayInternal(runtime, set.size());
+        res.setValuesFrom(set);
+        res.realLength = set.size();
 
         int index = res.realLength;
         // if index is 1 and we made a size 2 array, repack
@@ -3939,15 +3952,15 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
             return result;
         }
 
-        RubyHash set = makeHash(runtime);
+        Set<T> set = makeOrderedSet();
 
         for (int i = 0; i < arrays.length; i++) {
             for (int j = 0; j < arrays[i].realLength; j++) {
-                set.fastASet(arrays[i].elt(j), NEVER);
+                set.add((T) arrays[i].elt(j));
             }
         }
 
-        result = set.keys();
+        result = newArray(runtime, set.toArray(new IRubyObject[set.size()]));
         return result;
     }
 
