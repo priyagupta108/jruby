@@ -9,6 +9,7 @@ import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyEncoding;
+import org.jruby.RubyInteger;
 import org.jruby.RubyRegexp;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.lexer.yacc.LexContext;
@@ -202,11 +203,19 @@ public abstract class LexingCommon {
     }
 
     public ByteList createTokenByteList() {
-        return new ByteList(lexb.unsafeBytes(), lexb.begin() + tokp, lex_p - tokp, getEncoding(), true);
+        return createTokenByteList(lexb.unsafeBytes(), lexb.begin() + tokp, lex_p - tokp, getEncoding());
+    }
+
+    private static ByteList createTokenByteList(byte[] bytes, int index, int len, Encoding encoding) {
+        if (len == 1) {
+            return RubyInteger.singleCharByteList(bytes[index], encoding);
+        }
+
+        return new ByteList(bytes, index, len, encoding, false);
     }
 
     public ByteList createTokenByteList(int start) {
-        return new ByteList(lexb.unsafeBytes(), lexb.begin() + start, lex_p - tokp - start, getEncoding(), false);
+        return createTokenByteList(lexb.unsafeBytes(), lexb.begin() + start, lex_p - tokp - start, getEncoding());
     }
 
     public String createTokenString(int start) {

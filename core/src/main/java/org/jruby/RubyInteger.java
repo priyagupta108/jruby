@@ -440,17 +440,18 @@ public abstract class RubyInteger extends RubyNumeric {
      * @return a new single-character RubyString
      */
     public static RubyString singleCharString(Ruby runtime, byte b, RubyClass meta, Encoding enc) {
-        ByteList bytes;
+        // use shared for cached bytelists
+        return RubyString.newStringShared(runtime, meta, singleCharByteList(b, enc));
+    }
+
+    public static ByteList singleCharByteList(byte b, Encoding enc) {
         if (enc == USASCIIEncoding.INSTANCE) {
-            bytes = singleCharByteList(b);
-        } else if (Byte.toUnsignedInt(b) < 0x80 && enc == RubyString.UTF8) {
-            bytes = singleCharUTF8ByteList(b);
-        } else {
-            return RubyString.newStringShared(runtime, SINGLE_CHAR_BYTES[Byte.toUnsignedInt(b)], enc);
+            return singleCharByteList(b);
+        } else if (Byte.toUnsignedInt(b) < 0x80 && enc == UTF8Encoding.INSTANCE) {
+            return singleCharUTF8ByteList(b);
         }
 
-        // use shared for cached bytelists
-        return RubyString.newStringShared(runtime, meta, bytes);
+        return new ByteList(SINGLE_CHAR_BYTES[Byte.toUnsignedInt(b)], 0, 1, enc, false);
     }
 
     /** int_chr
