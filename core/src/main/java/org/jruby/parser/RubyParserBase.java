@@ -585,7 +585,7 @@ public abstract class RubyParserBase {
     }
 
     public Node attrset(Node receiver, ByteList callType, ByteList name) {
-        return new_attrassign(receiver.getLine(), receiver, name.append('='), null, isLazy(callType));
+        return new_attrassign(receiver.getLine(), receiver, name.copyAndAppend('='), null, isLazy(callType));
     }
 
     public void backrefAssignError(Node node) {

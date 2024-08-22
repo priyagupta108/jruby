@@ -38,6 +38,7 @@ import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -457,6 +458,29 @@ public class ByteList implements Comparable, CharSequence, Serializable {
         realSize++;
         invalidate();
         return this;
+    }
+
+    /**
+     * Create a new ByteList one byte longer with that element populated by the given byte.
+     * <p>
+     * Subsequent appends will make new byte[] copies, so this should only be used to create a single new ByteList of
+     * size == realSize + 1.
+     *
+     * @param bite the byte to append when copying to a new ByteList
+     * @return a new ByteList with the given byte appended
+     */
+    public ByteList copyAndAppend(int bite) {
+        byte[] bytes = this.bytes;
+        int realSize = this.realSize;
+        int begin = this.begin;
+
+        byte[] newBytes = Arrays.copyOfRange(bytes, begin, begin + realSize + 1);
+
+        newBytes[realSize] = (byte) bite;
+
+        ByteList bl = new ByteList(newBytes, 0, realSize + 1, encoding, false);
+
+        return bl;
     }
 
     /**
