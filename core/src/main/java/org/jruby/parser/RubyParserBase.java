@@ -570,7 +570,7 @@ public abstract class RubyParserBase {
     public Node aryset(Node receiver, Node index) {
         value_expr(receiver);
 
-        return new_attrassign(receiver.getLine(), receiver, CommonByteLists.ASET_METHOD, index, false);
+        return new_arrayattrassign(receiver.getLine(), receiver, index, false);
     }
 
     /**
@@ -585,7 +585,7 @@ public abstract class RubyParserBase {
     }
 
     public Node attrset(Node receiver, ByteList callType, ByteList name) {
-        return new_attrassign(receiver.getLine(), receiver, name.copyAndAppend('='), null, isLazy(callType));
+        return new_attrassign(receiver.getLine(), receiver, name, null, isLazy(callType));
     }
 
     public void backrefAssignError(Node node) {
@@ -1257,6 +1257,16 @@ public abstract class RubyParserBase {
         return RubySymbol.newIDSymbol(getRuntime(), identifierValue);
     }
 
+    public RubySymbol attrsetSymbolID(ByteList baseIdentifier) {
+        // FIXME: We walk this during identifier construction so we should calculate CR without having to walk twice.
+        if (RubyString.scanForCodeRange(baseIdentifier) == StringSupport.CR_BROKEN) {
+            Ruby runtime = getRuntime();
+            throw runtime.newSyntaxError(str(runtime, "invalid symbol in encoding " + lexer.getEncoding() + " :\"", inspectIdentifierByteList(runtime, baseIdentifier.copyAndAppend('=')), "\""));
+        }
+
+        return RubySymbol.newSuffixedIDSymbol(getRuntime(), baseIdentifier, '=');
+    }
+
     public boolean isLazy(String callType) {
         return "&.".equals(callType);
     }
@@ -1265,7 +1275,7 @@ public abstract class RubyParserBase {
         return callType == AMPERSAND_DOT;
     }
     
-    public Node new_attrassign(int line, Node receiver, ByteList name, Node argsNode, boolean isLazy) {
+    public Node new_attrassign(int line, Node receiver, ByteList baseName, Node argsNode, boolean isLazy) {
         // We extract BlockPass from tree and insert it as a block node value (MRI wraps it around the args)
         Node blockNode = null;
         if (argsNode instanceof BlockPassNode) {
@@ -1273,7 +1283,18 @@ public abstract class RubyParserBase {
             argsNode = ((BlockPassNode) argsNode).getArgsNode();
         }
 
-        return new AttrAssignNode(line, receiver, symbolID(name), argsNode, blockNode, isLazy);
+        return new AttrAssignNode(line, receiver, attrsetSymbolID(baseName), argsNode, blockNode, isLazy);
+    }
+
+    public Node new_arrayattrassign(int line, Node receiver, Node argsNode, boolean isLazy) {
+        // We extract BlockPass from tree and insert it as a block node value (MRI wraps it around the args)
+        Node blockNode = null;
+        if (argsNode instanceof BlockPassNode) {
+            blockNode = argsNode; // It is weird to leave this as-is but we need to know it vs iternode vs weird ast bug.
+            argsNode = ((BlockPassNode) argsNode).getArgsNode();
+        }
+
+        return new AttrAssignNode(line, receiver, symbolID(CommonByteLists.ASET_METHOD), argsNode, blockNode, isLazy);
     }
 
     public Node new_call(Node receiver, ByteList callType, ByteList name, Node argsNode, Node iter) {

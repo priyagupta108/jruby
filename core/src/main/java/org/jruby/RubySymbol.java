@@ -373,6 +373,10 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         return newHardSymbol(runtime, bytes);
     }
 
+    public static RubySymbol newSuffixedIDSymbol(Ruby runtime, ByteList bytes, int suffix) {
+        return runtime.getSymbolTable().getSuffixedSymbol(bytes, suffix, true);
+    }
+
     /**
      * Generic identifier symbol creation (or retrieval) method that invokes a handler before storing new symbols.
      *
@@ -1071,6 +1075,23 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
             return symbol;
         }
 
+        public RubySymbol getSuffixedSymbol(ByteList bytes, int extra, boolean hard) {
+            int hash = javaStringHashCode(bytes, extra);
+
+            RubySymbol symbol = findSuffixedSymbol(bytes, extra, hash, hard);
+
+            if (symbol == null) {
+                bytes = bytes.copyAndAppend(extra);
+                symbol = createSymbol(
+                        RubyEncoding.decodeRaw(bytes),
+                        bytes,
+                        hash,
+                        hard);
+            }
+
+            return symbol;
+        }
+
         /**
          * Get or retrieve an existing symbol from the table, invoking the given handler before return.
          * In the case of a new symbol, the handler will be invoked before the symbol is registered, so it can be
@@ -1115,6 +1136,20 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
             return symbol;
         }
 
+        private RubySymbol findSuffixedSymbol(ByteList bytes, int suffix, int hash, boolean hard) {
+            RubySymbol symbol = null;
+
+            for (SymbolEntry e = getEntryFromTable(symbolTable, hash); e != null; e = e.next) {
+                if (isSuffixedSymbolMatch(bytes, suffix, hash, e)) {
+                    if (hard) e.setHardReference();
+                    symbol = e.symbol.get();
+                    break;
+                }
+            }
+
+            return symbol;
+        }
+
         public RubySymbol fastGetSymbol(String internedName) {
             return fastGetSymbol(internedName, false);
         }
@@ -1148,6 +1183,12 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
         private static boolean isSymbolMatch(ByteList bytes, int hash, SymbolEntry entry) {
             return hash == entry.hash && bytes.equals(entry.bytes);
+        }
+
+        private static boolean isSuffixedSymbolMatch(ByteList bytes, int suffix, int hash, SymbolEntry entry) {
+            ByteList entryBytes = entry.bytes;
+            int entrySize = entryBytes.realSize();
+            return hash == entry.hash && entrySize == bytes.realSize() + 1 && entryBytes.startsWith(bytes) && entryBytes.get(entrySize - 1) == suffix;
         }
 
         private RubySymbol createSymbol(final String name, final ByteList value, final int hash, boolean hard) {
@@ -1427,6 +1468,22 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
             int v = bytes[i] & 0xFF;
             h = 31 * h + v;
         }
+        return h;
+    }
+
+    /**
+     * Like javaStringHashCode but considering one additional byte.
+     *
+     * Useful for hashing a ByteList plus one more character without creating a new ByteList.
+     *
+     * @param iso8859 the base ByteList
+     * @param extra the extra byte
+     * @return a hash of the bytes of the base ByteList plus the extra byte
+     */
+    public static int javaStringHashCode(ByteList iso8859, int extra) {
+        int h = javaStringHashCode(iso8859);
+        int v = extra & 0xFF;
+        h = 31 * h + v;
         return h;
     }
 
