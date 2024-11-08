@@ -24,6 +24,10 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v3
+      - name: List installed Java versions
+        run: |
+          sudo update-alternatives --list java
+          sudo update-alternatives --list javac
       - name: remove default java except 17
         run: sudo apt remove temurin-8-jdk temurin-11-jdk temurin-21-jdk
       - name: List installed Java versions
