@@ -28,12 +28,14 @@ jobs:
         run: |
           sudo update-alternatives --list java
           sudo update-alternatives --list javac
+          sudo update-alternatives --config gcc
       - name: remove default java except 17
         run: sudo apt remove temurin-8-jdk temurin-11-jdk temurin-21-jdk
       - name: List installed Java versions
         run: |
           sudo update-alternatives --list java
           sudo update-alternatives --list javac
+          sudo update-alternatives --config gcc
       - name: set up java ${{ matrix.java-version }}
         uses: actions/setup-java@v3
         with:
@@ -43,7 +45,8 @@ jobs:
       - name: List installed Java versions
         run: |
           sudo update-alternatives --list java
-          sudo update-alternatives --list javac    
+          sudo update-alternatives --list javac   
+          sudo update-alternatives --config gcc
       # - name: Set alternatives for java and javac
       #   run: |
       #     sudo update-alternatives --set java /usr/lib/jvm/temurin-${{ matrix.java-version }}-jdk-amd64/bin/java
