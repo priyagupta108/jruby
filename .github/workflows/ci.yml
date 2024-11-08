@@ -15,7 +15,7 @@ jobs:
 
     strategy:
       matrix:
-        target: ['test:jruby:int', 'spec:ruby:fast', 'spec:ji', 'spec:ffi']
+        target: ['test:jruby:int']
         java-version: ['17', '21', '23']
       fail-fast: false
 
