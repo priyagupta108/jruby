@@ -32,7 +32,7 @@ jobs:
       - name: Install JDK 17
         run: |
           sudo update-alternatives --set java /usr/lib/jvm/temurin-17-jdk-amd64/bin/java
-          sudo update-alternatives --set javac /usr/lib/jvm/temurin-17-jdk-amd644/bin/javac
+          sudo update-alternatives --set javac /usr/lib/jvm/temurin-17-jdk-amd64/bin/javac
 
       - name: List installed Java versions
         run: |
