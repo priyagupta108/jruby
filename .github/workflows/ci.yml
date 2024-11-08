@@ -24,21 +24,18 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v3
-      - name: List installed Java versions
+      - name: List installed Java versions before
         run: |
-          sudo update-alternatives --list java
-          sudo update-alternatives --list javac
           sudo update-alternatives --config java
-      - name: Install JDK 17
+      - name: Set alternatives for java and javac
         run: |
           sudo update-alternatives --set java /usr/lib/jvm/temurin-17-jdk-amd64/bin/java
           sudo update-alternatives --set javac /usr/lib/jvm/temurin-17-jdk-amd64/bin/javac
 
-      - name: List installed Java versions
+      - name: List installed Java versions after
         run: |
-          sudo update-alternatives --list java
-          sudo update-alternatives --list javac
           sudo update-alternatives --config java
+          
       - name: set up java ${{ matrix.java-version }}
         uses: actions/setup-java@v3
         with:
