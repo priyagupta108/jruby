@@ -32,6 +32,11 @@ jobs:
           distribution: 'zulu'
           java-version: ${{ matrix.java-version }}
           cache: 'maven'
+      - name: Set alternatives for java and javac
+        run: |
+          sudo update-alternatives --set java /usr/lib/jvm/temurin-${{ matrix.java-version }}-jdk-amd64/bin/java
+          sudo update-alternatives --set javac /usr/lib/jvm/temurin-${{ matrix.java-version }}-jdk-amd64/bin/javac
+    
       - name: bootstrap
         run: mvn -Pbootstrap clean package
       - name: bundle install
