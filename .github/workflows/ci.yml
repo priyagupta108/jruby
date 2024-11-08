@@ -24,18 +24,26 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v3
-      # - name: remove default java except 17
-      #   run: sudo apt remove temurin-8-jdk temurin-11-jdk temurin-21-jdk
+      - name: remove default java except 17
+        run: sudo apt remove temurin-8-jdk temurin-11-jdk temurin-21-jdk
+      - name: List installed Java versions
+        run: |
+          sudo update-alternatives --list java
+          sudo update-alternatives --list javac
       - name: set up java ${{ matrix.java-version }}
         uses: actions/setup-java@v3
         with:
           distribution: 'zulu'
           java-version: ${{ matrix.java-version }}
           cache: 'maven'
-      - name: Set alternatives for java and javac
+      - name: List installed Java versions
         run: |
-          sudo update-alternatives --set java /usr/lib/jvm/temurin-${{ matrix.java-version }}-jdk-amd64/bin/java
-          sudo update-alternatives --set javac /usr/lib/jvm/temurin-${{ matrix.java-version }}-jdk-amd64/bin/javac
+          sudo update-alternatives --list java
+          sudo update-alternatives --list javac    
+      # - name: Set alternatives for java and javac
+      #   run: |
+      #     sudo update-alternatives --set java /usr/lib/jvm/temurin-${{ matrix.java-version }}-jdk-amd64/bin/java
+      #     sudo update-alternatives --set javac /usr/lib/jvm/temurin-${{ matrix.java-version }}-jdk-amd64/bin/javac
     
       - name: bootstrap
         run: mvn -Pbootstrap clean package
