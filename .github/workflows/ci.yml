@@ -29,8 +29,11 @@ jobs:
           sudo update-alternatives --list java
           sudo update-alternatives --list javac
           sudo update-alternatives --config java
-      - name: remove default java except 17
-        run: sudo apt remove temurin-8-jdk temurin-11-jdk temurin-21-jdk
+      - name: Install JDK 17
+        run: |
+          sudo update-alternatives --set java /usr/lib/jvm/temurin-17-jdk-amd64/bin/java
+          sudo update-alternatives --set javac /usr/lib/jvm/temurin-17-jdk-amd644/bin/javac
+
       - name: List installed Java versions
         run: |
           sudo update-alternatives --list java
